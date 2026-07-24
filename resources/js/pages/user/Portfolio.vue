@@ -1,0 +1,95 @@
+<script setup lang="ts">
+import { Button } from '@/components/ui/button';
+import UserLayout from '@/layouts/user/UserLayout.vue';
+import { Head } from '@inertiajs/vue3';
+import { Award, Download, ShieldCheck } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+
+defineOptions({ layout: UserLayout });
+
+interface CertificateRow {
+    id: number;
+    kind: 'course' | 'exam';
+    title: string;
+    issued_at: string;
+}
+
+const props = defineProps<{
+    certificates: CertificateRow[];
+}>();
+
+const { t } = useI18n();
+
+const courseCerts = () => props.certificates.filter((c) => c.kind === 'course');
+const examCerts = () => props.certificates.filter((c) => c.kind === 'exam');
+</script>
+
+<template>
+    <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+        <Head :title="t('nav.user.portfolio')" />
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 to-indigo-950 p-6 text-white">
+                <ShieldCheck class="absolute right-0 bottom-0 h-48 w-48 translate-x-12 translate-y-6 opacity-10" />
+                <div class="relative z-10 max-w-2xl">
+                    <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
+                        {{ t('nav.user.portfolio') }}
+                    </span>
+                    <h2 class="mt-2 text-xl font-extrabold">{{ t('nav.user.portfolio') }}</h2>
+                    <p class="mt-1 text-xs leading-relaxed text-slate-300">{{ t('user.portfolio.description') }}</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 p-4 shadow-sm">
+                    <h3 class="mb-3 flex items-center gap-1 text-sm font-bold">
+                        <Award class="h-4 w-4" /> {{ t('user.portfolio.courseCertsTitle') }}
+                    </h3>
+                    <p v-if="courseCerts().length === 0" class="py-6 text-center text-xs italic text-muted-foreground">
+                        {{ t('user.portfolio.noCourseCerts') }}
+                    </p>
+                    <div v-else class="space-y-2">
+                        <div
+                            v-for="cert in courseCerts()"
+                            :key="cert.id"
+                            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+                        >
+                            <div>
+                                <p class="font-medium">{{ cert.title }}</p>
+                                <p class="text-xs text-muted-foreground">{{ t('user.portfolio.issuedOn', { date: cert.issued_at }) }}</p>
+                            </div>
+                            <Button as-child size="sm" variant="secondary">
+                                <a :href="route('user.certificates.download', cert.id)"
+                                    ><Download class="mr-1 h-3 w-3" />{{ t('user.portfolio.download') }}</a
+                                >
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 p-4 shadow-sm">
+                    <h3 class="mb-3 flex items-center gap-1 text-sm font-bold">
+                        <Award class="h-4 w-4" /> {{ t('user.portfolio.examCertsTitle') }}
+                    </h3>
+                    <p v-if="examCerts().length === 0" class="py-6 text-center text-xs italic text-muted-foreground">
+                        {{ t('user.portfolio.noExamCerts') }}
+                    </p>
+                    <div v-else class="space-y-2">
+                        <div
+                            v-for="cert in examCerts()"
+                            :key="cert.id"
+                            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+                        >
+                            <div>
+                                <p class="font-medium">{{ cert.title }}</p>
+                                <p class="text-xs text-muted-foreground">{{ t('user.portfolio.issuedOn', { date: cert.issued_at }) }}</p>
+                            </div>
+                            <Button as-child size="sm" variant="secondary">
+                                <a :href="route('user.certificates.download', cert.id)"
+                                    ><Download class="mr-1 h-3 w-3" />{{ t('user.portfolio.download') }}</a
+                                >
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</template>
