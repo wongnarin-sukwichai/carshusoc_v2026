@@ -62,11 +62,13 @@ class HandleInertiaRequests extends Middleware
             // landing page and UserSidebar) hide a center without a per-route query.
             'serviceCenters' => ServiceCenter::pluck('is_visible', 'code'),
             // Powers the "live email log" panel under AdminSidebar (mockup parity) —
-            // only queried when an admin is actually authenticated.
-            'recentEmailLogs' => $request->user('admin')
-                ? EmailLog::latest('sent_at')->limit(5)->get(['id', 'to_email', 'subject', 'body', 'sent_at'])
-                : [],
-            'emailLogCount' => $request->user('admin') ? EmailLog::count() : 0,
+            // only queried when an admin is actually authenticated. Fan-out sends
+            // (e.g. one location-change notice to every registrant) collapse into
+            // a single row via EmailLog::recentGrouped().
+            'recentEmailLogs' => $request->user('admin') ? EmailLog::recentGrouped() : [],
+            // Badge count is "sent today", not all-time — matches what the panel
+            // below it is actually showing (recent activity, not a running total).
+            'emailLogCount' => $request->user('admin') ? EmailLog::whereDate('sent_at', today())->count() : 0,
         ]);
     }
 }

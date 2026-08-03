@@ -55,7 +55,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('exams/{exam}/import-scores', [ExamScoreController::class, 'importCsv'])->name('exams.import-scores');
 
         Route::get('course-grading', [CourseGradingController::class, 'index'])->name('course-grading');
-        Route::post('course-enrollments/{enrollment}/grade', [CourseGradingController::class, 'grade'])->name('course-enrollments.grade');
+        Route::post('course-grading/save', [CourseGradingController::class, 'gradeBulk'])->name('course-grading.save');
 
         // Reserved for admin: managing admin accounts, email templates, and
         // certificate templates is system configuration, not day-to-day operations.
@@ -71,6 +71,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('certificate-templates', [CertificateTemplateController::class, 'store'])->name('certificate-templates.store');
             Route::put('certificate-templates/{certificateTemplate}', [CertificateTemplateController::class, 'update'])->name('certificate-templates.update');
             Route::delete('certificate-templates/{certificateTemplate}', [CertificateTemplateController::class, 'destroy'])->name('certificate-templates.destroy');
+            Route::post('certificate-templates/{certificateTemplate}/preview-draft', [CertificateTemplateController::class, 'previewDraft'])->name('certificate-templates.preview-draft');
         });
     });
 });

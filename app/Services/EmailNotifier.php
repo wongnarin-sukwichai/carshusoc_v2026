@@ -17,8 +17,11 @@ class EmailNotifier
      * shouldn't block the business action that triggered it.
      *
      * @param  array<string, string>  $replacements  e.g. ['{{name}}' => 'Somchai']
+     * @param  ?string  $batchId  Shared across a fan-out (e.g. notifying every registrant of
+     *                            a location change) so the admin email log can collapse the
+     *                            whole send into a single expandable row.
      */
-    public function send(string $templateKey, User $user, array $replacements = [], ?Model $related = null): void
+    public function send(string $templateKey, User $user, array $replacements = [], ?Model $related = null, ?string $batchId = null): void
     {
         $template = EmailTemplate::where('key', $templateKey)->first();
 
@@ -38,6 +41,7 @@ class EmailNotifier
             'body' => $body,
             'related_type' => $related?->getMorphClass(),
             'related_id' => $related?->id,
+            'batch_id' => $batchId,
             'sent_at' => now(),
         ]);
     }

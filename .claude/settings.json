@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(php -l database/seeders/TranslationRequestSeeder.php)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(php -l database/seeders/ExamRegistrationSeeder.php)"
+    ]
+  }
+}

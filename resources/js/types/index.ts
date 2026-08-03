@@ -19,11 +19,12 @@ export interface NavItem {
 export type FlashPayload = string | { key: string; params?: Record<string, unknown> };
 
 export interface EmailLogEntry {
-    id: number;
-    to_email: string;
+    id: number | string;
     subject: string;
     body: string;
-    sent_at: string;
+    sent_at: string | null;
+    recipient_count: number;
+    recipients: string[];
 }
 
 export interface SharedData {

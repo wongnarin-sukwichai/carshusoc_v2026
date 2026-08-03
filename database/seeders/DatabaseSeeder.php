@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
             ServiceCenterSeeder::class,
             DemoContentSeeder::class,
             EmailTemplateSeeder::class,
+            CourseEnrollmentSeeder::class,
+            TranslationRequestSeeder::class,
+            ExamRegistrationSeeder::class,
         ]);
     }
 }

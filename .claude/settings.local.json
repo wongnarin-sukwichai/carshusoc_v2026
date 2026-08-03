@@ -8,7 +8,8 @@
       "Bash(php -l app/Http/Controllers/Admin/RegistrantController.php)",
       "Bash(php -l routes/admin.php)",
       "Bash(php -l app/Http/Controllers/Admin/ImpersonationController.php)",
-      "Bash(php -l app/Models/ImpersonationLog.php)"
+      "Bash(php -l app/Models/ImpersonationLog.php)",
+      "Bash(php artisan tinker '--execute= *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\aimam\\AppData\\Local\\Temp\\pw-brand"

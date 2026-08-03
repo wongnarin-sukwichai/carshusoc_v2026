@@ -20,6 +20,10 @@ class Course extends Model
         'price',
         'prerequisite_course_id',
         'location',
+        'start_date',
+        'end_date',
+        'registration_open_at',
+        'registration_close_at',
         'requires_receipt',
         'is_visible',
         'certificate_template_id',
@@ -29,6 +33,10 @@ class Course extends Model
     {
         return [
             'price' => 'decimal:2',
+            'start_date' => 'date',
+            'end_date' => 'date',
+            'registration_open_at' => 'date',
+            'registration_close_at' => 'date',
             'requires_receipt' => 'boolean',
             'is_visible' => 'boolean',
         ];

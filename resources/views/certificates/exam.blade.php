@@ -7,21 +7,30 @@
         body {
             font-family: 'DejaVu Sans', sans-serif;
             margin: 0;
-            padding: 50px 70px;
-            border: 10px solid {{ $template->border_color }};
+            /* Portrait background is a fixed, standardized layout too (logo
+               top-left + decorative corner only) — top padding is calibrated
+               to clear that logo area, same idea as training.blade.php's
+               .name margin-top. Adjust here if the reference design changes. */
+            padding: 130px 60px 50px;
+            @if (! $template->backgroundImageDataUri())
+                border: 10px solid {{ $template->border_color }};
+            @endif
             color: #1e293b;
+            position: relative;
         }
-        .header { text-align: center; margin-bottom: 20px; }
-        .eyebrow {
-            font-size: 11px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: {{ $template->border_color }};
-            font-weight: bold;
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            object-fit: cover;
         }
-        .title { font-size: 26px; font-weight: bold; margin: 6px 0 2px; }
+        .header { text-align: center; margin-bottom: 18px; margin-top: 130px;}
+        .title { font-size: 20px; font-weight: bold; margin: 0 0 2px; color: {{ $template->border_color }}; }
         .subtitle { font-size: 12px; color: #64748b; }
-        .meta { font-size: 12px; margin: 20px 0 4px; }
+        .meta { font-size: 12px; margin: 4px 0; }
         .meta strong { color: #0f172a; }
         table.scores {
             width: 100%;
@@ -43,12 +52,14 @@
             font-weight: bold;
             background: #f8fafc;
         }
-        .signatures {
+        .signatures-row {
             width: 100%;
-            margin-top: 50px;
+            margin-top: 36px;
         }
-        .signatures td {
-            width: 33.33%;
+        .signatures-row + .signatures-row {
+            margin-top: 14px;
+        }
+        .signatures-row td {
             text-align: center;
             font-size: 10px;
             color: #475569;
@@ -56,18 +67,32 @@
             border-top: 1px solid #cbd5e1;
         }
         .sig-name { font-weight: bold; color: #1e293b; }
-        .hash { margin-top: 30px; font-size: 8px; color: #94a3b8; text-align: center; }
+        .sig-image {
+            max-height: 36px;
+            max-width: 120px;
+            margin: 0 auto 4px;
+            display: block;
+        }
+        .hash { margin-top: 20px; font-size: 8px; color: #94a3b8; text-align: center; }
     </style>
 </head>
 <body>
+    @if ($backgroundUri = $template->backgroundImageDataUri())
+        <img src="{{ $backgroundUri }}" class="background" alt="">
+    @endif
     <div class="header">
-        <p class="eyebrow">Official Test Certificate</p>
         <p class="title">{{ $template->title }}</p>
         <p class="subtitle">{{ $template->subtitle }}</p>
     </div>
 
     <p class="meta">ชื่อ-สกุล: <strong>{{ $user->name }}</strong></p>
     <p class="meta">สถานที่สอบ: <strong>{{ $exam->location ?? '-' }}</strong></p>
+    @if ($registration->room)
+        <p class="meta">ห้องสอบ: <strong>{{ $registration->room }}</strong></p>
+    @endif
+    @if ($registration->seat_number)
+        <p class="meta">เลขที่นั่งสอบ: <strong>{{ $registration->seat_number }}</strong></p>
+    @endif
     <p class="meta">วันที่สอบ: <strong>{{ $exam->exam_date->translatedFormat('d F Y') }}</strong></p>
 
     <table class="scores">
@@ -84,26 +109,7 @@
         </tbody>
     </table>
 
-    <table class="signatures">
-        <tr>
-            <td>
-                <div class="sig-name">{{ $template->signatory1_name }}</div>
-                <div>{{ $template->signatory1_title }}</div>
-            </td>
-            @if ($template->signatory2_name)
-                <td>
-                    <div class="sig-name">{{ $template->signatory2_name }}</div>
-                    <div>{{ $template->signatory2_title }}</div>
-                </td>
-            @endif
-            @if ($template->signatory3_name)
-                <td>
-                    <div class="sig-name">{{ $template->signatory3_name }}</div>
-                    <div>{{ $template->signatory3_title }}</div>
-                </td>
-            @endif
-        </tr>
-    </table>
+    @include('certificates.partials.signatures-pyramid', ['template' => $template])
 
     <p class="hash">CARS-HUSOC Certificate System — Verified</p>
 </body>

@@ -32,6 +32,8 @@ class ExamScoreController extends Controller
                     'user_name' => $registration->user->name,
                     'user_email' => $registration->user->email,
                     'status' => $registration->status,
+                    'room' => $registration->room,
+                    'seat_number' => $registration->seat_number,
                     'listening_score' => $registration->listening_score,
                     'reading_score' => $registration->reading_score,
                     'conversation_score' => $registration->conversation_score,
@@ -56,6 +58,8 @@ class ExamScoreController extends Controller
             'reading_score' => ['required', 'integer', 'min:0', 'max:25'],
             'conversation_score' => ['required', 'integer', 'min:0', 'max:25'],
             'grammar_score' => ['required', 'integer', 'min:0', 'max:25'],
+            'room' => ['nullable', 'string', 'max:100'],
+            'seat_number' => ['nullable', 'string', 'max:50'],
         ]);
 
         $this->applyScore($registration, $data);
@@ -88,6 +92,8 @@ class ExamScoreController extends Controller
             }
 
             [$email, $listening, $reading, $conversation, $grammar] = $parts;
+            $room = $parts[5] ?? null;
+            $seatNumber = $parts[6] ?? null;
 
             $user = User::where('email', $email)->first();
 
@@ -103,6 +109,14 @@ class ExamScoreController extends Controller
                 'conversation_score' => (int) $conversation,
                 'grammar_score' => (int) $grammar,
             ];
+
+            if ($room !== null && $room !== '') {
+                $scores['room'] = $room;
+            }
+
+            if ($seatNumber !== null && $seatNumber !== '') {
+                $scores['seat_number'] = $seatNumber;
+            }
 
             if (collect($scores)->contains(fn ($score) => $score < 0 || $score > 25)) {
                 $errors[] = 'บรรทัด '.($lineNumber + 1).': คะแนนต้องอยู่ระหว่าง 0-25';
@@ -129,7 +143,7 @@ class ExamScoreController extends Controller
     }
 
     /**
-     * @param  array{listening_score:int,reading_score:int,conversation_score:int,grammar_score:int}  $scores
+     * @param  array{listening_score:int,reading_score:int,conversation_score:int,grammar_score:int,room?:?string,seat_number?:?string}  $scores
      */
     protected function applyScore(ExamRegistration $registration, array $scores): void
     {

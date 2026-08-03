@@ -8,6 +8,7 @@ use App\Models\CourseEnrollment;
 use App\Services\EmailNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -36,6 +37,7 @@ class CourseController extends Controller
     protected function notifyLocationChanged(Course $course, ?string $oldLocation, ?string $newLocation): void
     {
         $notifier = app(EmailNotifier::class);
+        $batchId = (string) Str::uuid();
 
         $course->enrollments()->with('user')->get()->each(
             fn (CourseEnrollment $enrollment) => $notifier->send('location_changed', $enrollment->user, [
@@ -43,7 +45,7 @@ class CourseController extends Controller
                 '{{item_name}}' => $course->name_th,
                 '{{old_location}}' => $oldLocation ?: '-',
                 '{{new_location}}' => $newLocation ?: '-',
-            ], $course)
+            ], $course, $batchId)
         );
     }
 
@@ -74,6 +76,10 @@ class CourseController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'prerequisite_course_id' => $prerequisiteRule,
             'location' => ['nullable', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'registration_open_at' => ['nullable', 'date'],
+            'registration_close_at' => ['nullable', 'date', 'after_or_equal:registration_open_at'],
             'requires_receipt' => ['sometimes', 'boolean'],
             'is_visible' => ['sometimes', 'boolean'],
             'certificate_template_id' => ['nullable', 'integer', 'exists:certificate_templates,id'],

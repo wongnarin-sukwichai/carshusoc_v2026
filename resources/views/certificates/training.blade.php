@@ -8,52 +8,65 @@
             font-family: 'DejaVu Sans', sans-serif;
             margin: 0;
             padding: 60px 70px;
-            border: 10px solid {{ $template->border_color }};
+            @if (! $template->backgroundImageDataUri())
+                border: 10px solid {{ $template->border_color }};
+            @endif
             text-align: center;
+            position: relative;
         }
-        .eyebrow {
-            font-size: 12px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            color: {{ $template->border_color }};
-            font-weight: bold;
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            object-fit: cover;
         }
-        .title {
-            font-size: 34px;
-            font-weight: bold;
-            margin: 10px 0 4px;
-        }
-        .subtitle {
-            font-size: 13px;
-            color: #475569;
-            max-width: 560px;
-            margin: 0 auto 24px;
-        }
-        .statement {
-            font-size: 12px;
-            color: #475569;
-            max-width: 620px;
-            margin: 0 auto;
-        }
+        /* The 300px margin-top is a fixed value, not a guess — every training
+           background is now required to follow one standard layout (logos +
+           "ประกาศนียบัตร" + "ฉบับนี้ให้ไว้เพื่อแสดงว่า" baked in, blank space
+           starting right under that), so this always lines up with the top
+           of that blank space. If the standard layout ever changes, this
+           needs to be re-measured against the new reference design. */
         .name {
             font-size: 24px;
             font-weight: bold;
             text-decoration: underline;
-            margin: 18px 0;
+            color: {{ $template->border_color }};
+            margin: 300px 0 12px;
+        }
+        .course-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: {{ $template->border_color }};
+            max-width: 620px;
+            margin: 0 auto 10px;
         }
         .detail {
             font-size: 13px;
             color: #334155;
             max-width: 620px;
-            margin: 0 auto 40px;
-            line-height: 1.6;
+            margin: 0 auto 10px;
+            line-height: 1.5;
         }
+        .dates {
+            font-size: 12px;
+            color: #475569;
+            margin: 0 auto 4px;
+        }
+        /* Kept tight on purpose — with 4 signatories and long subtitle/course-name
+           text this section is what's most at risk of pushing onto a second
+           PDF page (see test_training_certificate_stays_on_one_page_even_with_maximum_content
+           in tests/Feature/CertificateTemplateManagementTest.php — rerun it after
+           touching any spacing here). The 300px .name margin-top is the one
+           value that must stay fixed to match the background artwork; everything
+           below it can flex to make room. */
         .signatures {
             width: 100%;
-            margin-top: 30px;
+            margin-top: 16px;
         }
         .signatures td {
-            width: 50%;
             text-align: center;
             font-size: 11px;
             color: #475569;
@@ -64,41 +77,41 @@
             font-weight: bold;
             color: #1e293b;
         }
+        .sig-image {
+            max-height: 40px;
+            max-width: 140px;
+            margin: 0 auto 4px;
+            display: block;
+        }
         .hash {
-            margin-top: 30px;
+            margin-top: 14px;
             font-size: 8px;
             color: #94a3b8;
         }
     </style>
 </head>
 <body>
-    <p class="eyebrow">Certificate of Achievement</p>
-    <p class="title">{{ $template->title }}</p>
-    <p class="subtitle">{{ $template->subtitle }}</p>
+    @if ($backgroundUri = $template->backgroundImageDataUri())
+        <img src="{{ $backgroundUri }}" class="background" alt="">
+    @endif
 
-    <p class="statement">ขอมอบประกาศนียบัตรฉบับนี้ให้ไว้เพื่อแสดงว่า</p>
+    {{-- The heading ("ประกาศนียบัตร" / "ฉบับนี้ให้ไว้เพื่อแสดงว่า") is expected to
+         already be part of the background artwork (a fixed, standardized
+         Canva layout — see admin/CertificateTemplates.vue's mock-data
+         preview) — so only the truly per-recipient content is rendered
+         live here. --}}
     <p class="name">{{ $user->name }}</p>
-    <p class="detail">
-        ได้ "ผ่าน" โครงการอบรมภาษา หลักสูตร {{ $course->name_th }} ({{ $course->code }})
-        @if ($enrollment->graded_at)
-            เมื่อวันที่ {{ $enrollment->graded_at->translatedFormat('d F Y') }}
-        @endif
-    </p>
+    <p class="detail">{{ $template->subtitle }}</p>
+    <p class="course-name">{{ $course->name_th }}</p>
 
-    <table class="signatures">
-        <tr>
-            <td>
-                <div class="sig-name">{{ $template->signatory1_name }}</div>
-                <div>{{ $template->signatory1_title }}</div>
-            </td>
-            @if ($template->signatory2_name)
-                <td>
-                    <div class="sig-name">{{ $template->signatory2_name }}</div>
-                    <div>{{ $template->signatory2_title }}</div>
-                </td>
-            @endif
-        </tr>
-    </table>
+    @if ($course->start_date && $course->end_date)
+        <p class="dates">
+            อบรมระหว่างวันที่ {{ $course->start_date->translatedFormat('d F Y') }} ถึง {{ $course->end_date->translatedFormat('d F Y') }}
+        </p>
+    @endif
+    <p class="dates">ให้ไว้ ณ วันที่ {{ $issuedAt->translatedFormat('d F Y') }}</p>
+
+    @include('certificates.partials.signatures', ['template' => $template])
 
     <p class="hash">CARS-HUSOC Certificate System — Verified</p>
 </body>

@@ -2,6 +2,7 @@
 import AdminUserMenuContent from '@/components/AdminUserMenuContent.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
+import { formatDate } from '@/lib/date';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import {
@@ -66,6 +67,14 @@ const visibleTopNavItems = computed(() => topNavItems.value.filter((item) => !it
 const visibleBottomNavItems = computed(() => bottomNavItems.value.filter((item) => !item.adminOnly || isAdmin.value));
 
 const isDataMenuOpen = ref(false);
+
+// Which grouped email-log rows are expanded to show their per-recipient list.
+const expandedEmailLogIds = ref<Set<number | string>>(new Set());
+const toggleEmailLogExpanded = (id: number | string) => {
+    const next = new Set(expandedEmailLogIds.value);
+    next.has(id) ? next.delete(id) : next.add(id);
+    expandedEmailLogIds.value = next;
+};
 </script>
 
 <template>
@@ -168,10 +177,32 @@ const isDataMenuOpen = ref(false);
                 <div v-for="mail in page.props.recentEmailLogs" :key="mail.id" class="rounded-xl border border-slate-800 bg-slate-800/60 p-3 text-[10px]">
                     <p class="mb-0.5 font-bold text-indigo-300">{{ mail.subject }}</p>
                     <p class="mb-1.5 line-clamp-2 leading-relaxed text-slate-300">{{ mail.body }}</p>
-                    <div class="flex items-center justify-between border-t border-slate-700/40 pt-1.5 text-[8px] text-slate-500">
-                        <span class="max-w-[120px] truncate">{{ mail.to_email }}</span>
-                        <span>{{ mail.sent_at }}</span>
+
+                    <button
+                        v-if="mail.recipient_count > 1"
+                        type="button"
+                        class="flex w-full items-center justify-between border-t border-slate-700/40 pt-1.5 text-[8px] text-slate-500 hover:text-slate-300"
+                        @click="toggleEmailLogExpanded(mail.id)"
+                    >
+                        <span class="flex items-center gap-1">
+                            <ChevronDown
+                                :class="['h-2.5 w-2.5 transition-transform', expandedEmailLogIds.has(mail.id) && 'rotate-180']"
+                            />
+                            {{ t('admin.emailLog.sentToCount', { count: mail.recipient_count }) }}
+                        </span>
+                        <span>{{ formatDate(mail.sent_at, 'DD/MM/YYYY HH:mm') }}</span>
+                    </button>
+                    <div v-else class="flex items-center justify-between border-t border-slate-700/40 pt-1.5 text-[8px] text-slate-500">
+                        <span class="max-w-[120px] truncate">{{ mail.recipients[0] }}</span>
+                        <span>{{ formatDate(mail.sent_at, 'DD/MM/YYYY HH:mm') }}</span>
                     </div>
+
+                    <ul
+                        v-if="mail.recipient_count > 1 && expandedEmailLogIds.has(mail.id)"
+                        class="mt-1.5 max-h-24 space-y-0.5 overflow-y-auto border-t border-slate-700/40 pt-1.5"
+                    >
+                        <li v-for="email in mail.recipients" :key="email" class="truncate text-slate-400">{{ email }}</li>
+                    </ul>
                 </div>
             </div>
         </div>

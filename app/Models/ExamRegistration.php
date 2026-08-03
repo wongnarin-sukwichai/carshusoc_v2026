@@ -15,6 +15,8 @@ class ExamRegistration extends Model
     protected $fillable = [
         'user_id',
         'exam_id',
+        'room',
+        'seat_number',
         'status',
         'listening_score',
         'reading_score',

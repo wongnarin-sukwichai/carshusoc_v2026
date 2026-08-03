@@ -8,6 +8,7 @@ use App\Models\ExamRegistration;
 use App\Services\EmailNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ExamController extends Controller
@@ -35,6 +36,7 @@ class ExamController extends Controller
     protected function notifyLocationChanged(Exam $exam, ?string $oldLocation, ?string $newLocation): void
     {
         $notifier = app(EmailNotifier::class);
+        $batchId = (string) Str::uuid();
 
         $exam->registrations()->with('user')->get()->each(
             fn (ExamRegistration $registration) => $notifier->send('location_changed', $registration->user, [
@@ -42,7 +44,7 @@ class ExamController extends Controller
                 '{{item_name}}' => $exam->name_th,
                 '{{old_location}}' => $oldLocation ?: '-',
                 '{{new_location}}' => $newLocation ?: '-',
-            ], $exam)
+            ], $exam, $batchId)
         );
     }
 
@@ -65,6 +67,8 @@ class ExamController extends Controller
             'name_en' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'exam_date' => ['required', 'date'],
+            'registration_open_at' => ['nullable', 'date'],
+            'registration_close_at' => ['nullable', 'date', 'after_or_equal:registration_open_at'],
             'location' => ['nullable', 'string', 'max:255'],
             'requires_receipt' => ['sometimes', 'boolean'],
             'mail_delivery_available' => ['sometimes', 'boolean'],

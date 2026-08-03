@@ -18,6 +18,8 @@ class Exam extends Model
         'name_en',
         'price',
         'exam_date',
+        'registration_open_at',
+        'registration_close_at',
         'location',
         'requires_receipt',
         'mail_delivery_available',
@@ -32,6 +34,8 @@ class Exam extends Model
         return [
             'price' => 'decimal:2',
             'exam_date' => 'date',
+            'registration_open_at' => 'date',
+            'registration_close_at' => 'date',
             'requires_receipt' => 'boolean',
             'mail_delivery_available' => 'boolean',
             'mail_delivery_fee' => 'decimal:2',

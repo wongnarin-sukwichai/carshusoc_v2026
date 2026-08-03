@@ -21,6 +21,8 @@ interface RegistrationRow {
     user_name: string;
     user_email: string;
     status: string;
+    room: string | null;
+    seat_number: string | null;
     listening_score: number | null;
     reading_score: number | null;
     conversation_score: number | null;
@@ -31,6 +33,8 @@ interface RegistrationRow {
 }
 
 interface ScoreDraft {
+    room: string;
+    seat_number: string;
     listening_score: number;
     reading_score: number;
     conversation_score: number;
@@ -52,6 +56,8 @@ watch(
     (registrations) => {
         registrations.forEach((r) => {
             scoreDrafts[r.id] = {
+                room: r.room ?? '',
+                seat_number: r.seat_number ?? '',
                 listening_score: r.listening_score ?? 0,
                 reading_score: r.reading_score ?? 0,
                 conversation_score: r.conversation_score ?? 0,
@@ -102,6 +108,8 @@ const importCsv = () => {
                     <thead class="bg-slate-100">
                         <tr>
                             <th class="p-2">{{ t('admin.examScores.colExaminee') }}</th>
+                            <th class="p-2 text-center">{{ t('admin.examScores.colRoom') }}</th>
+                            <th class="p-2 text-center">{{ t('admin.examScores.colSeatNumber') }}</th>
                             <th class="p-2 text-center">Listening</th>
                             <th class="p-2 text-center">Reading</th>
                             <th class="p-2 text-center">Conversation</th>
@@ -116,6 +124,22 @@ const importCsv = () => {
                             <td class="p-2">
                                 <p class="font-medium">{{ r.user_name }}</p>
                                 <p class="font-mono text-xs text-muted-foreground">{{ r.user_email }}</p>
+                            </td>
+                            <td class="p-2">
+                                <input
+                                    v-if="scoreDrafts[r.id]"
+                                    v-model="scoreDrafts[r.id].room"
+                                    type="text"
+                                    class="w-20 rounded border px-2 py-1 text-center"
+                                />
+                            </td>
+                            <td class="p-2">
+                                <input
+                                    v-if="scoreDrafts[r.id]"
+                                    v-model="scoreDrafts[r.id].seat_number"
+                                    type="text"
+                                    class="w-20 rounded border px-2 py-1 text-center"
+                                />
                             </td>
                             <td class="p-2">
                                 <input
@@ -168,7 +192,10 @@ const importCsv = () => {
             <div v-if="selectedExamId" class="space-y-3 rounded-xl border border-slate-200 p-4">
                 <h4 class="text-sm font-bold">{{ t('admin.examScores.csvImportTitle') }}</h4>
                 <p class="text-xs text-muted-foreground">
-                    {{ t('admin.examScores.csvFormat') }} <code class="rounded bg-muted px-1">email,listening,reading,conversation,grammar</code>
+                    {{ t('admin.examScores.csvFormat') }}
+                    <code class="rounded bg-muted px-1">email,listening,reading,conversation,grammar,room,seat_number</code>
+                    <br />
+                    {{ t('admin.examScores.csvFormatOptional') }}
                 </p>
                 <Textarea v-model="csvForm.csv" rows="4" placeholder="somchai.dev@gmail.com,20,22,18,21" />
                 <Button :disabled="csvForm.processing" @click="importCsv">{{ t('admin.examScores.importCsv') }}</Button>

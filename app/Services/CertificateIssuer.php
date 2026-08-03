@@ -7,6 +7,7 @@ use App\Models\CertificateTemplate;
 use App\Models\CourseEnrollment;
 use App\Models\ExamRegistration;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -17,15 +18,17 @@ class CertificateIssuer
         $enrollment->loadMissing('course', 'user');
 
         $template = $this->defaultTemplateFor('training');
+        $issuedAt = now();
 
         $pdfPath = $this->render('certificates.training', [
             'template' => $template,
             'enrollment' => $enrollment,
             'course' => $enrollment->course,
             'user' => $enrollment->user,
-        ]);
+            'issuedAt' => $issuedAt,
+        ], 'landscape');
 
-        return $this->upsertCertificate($enrollment, $enrollment->user_id, $template, null, $pdfPath);
+        return $this->upsertCertificate($enrollment, $enrollment->user_id, $template, null, $pdfPath, $issuedAt);
     }
 
     public function issueForExamRegistration(ExamRegistration $registration): Certificate
@@ -33,15 +36,17 @@ class CertificateIssuer
         $registration->loadMissing('exam', 'user', 'scoreScale.bands');
 
         $template = $this->defaultTemplateFor('exam');
+        $issuedAt = now();
 
         $pdfPath = $this->render('certificates.exam', [
             'template' => $template,
             'registration' => $registration,
             'exam' => $registration->exam,
             'user' => $registration->user,
-        ]);
+            'issuedAt' => $issuedAt,
+        ], 'portrait');
 
-        return $this->upsertCertificate($registration, $registration->user_id, $template, $registration->score_scale_id, $pdfPath);
+        return $this->upsertCertificate($registration, $registration->user_id, $template, $registration->score_scale_id, $pdfPath, $issuedAt);
     }
 
     protected function defaultTemplateFor(string $serviceCenterCode): CertificateTemplate
@@ -51,9 +56,9 @@ class CertificateIssuer
             ->firstOrFail();
     }
 
-    protected function render(string $view, array $data): string
+    protected function render(string $view, array $data, string $orientation = 'landscape'): string
     {
-        $pdf = Pdf::loadView($view, $data)->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView($view, $data)->setPaper('a4', $orientation);
 
         $path = 'certificates/'.Str::uuid().'.pdf';
 
@@ -67,7 +72,8 @@ class CertificateIssuer
         int $userId,
         CertificateTemplate $template,
         ?int $scoreScaleId,
-        string $pdfPath
+        string $pdfPath,
+        Carbon $issuedAt
     ): Certificate {
         return Certificate::updateOrCreate(
             [
@@ -79,7 +85,7 @@ class CertificateIssuer
                 'certificate_template_id' => $template->id,
                 'score_scale_id' => $scoreScaleId,
                 'verification_hash' => Str::random(40),
-                'issued_at' => now(),
+                'issued_at' => $issuedAt,
                 'pdf_path' => $pdfPath,
             ]
         );
