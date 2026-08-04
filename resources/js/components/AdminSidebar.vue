@@ -17,6 +17,7 @@ import {
     GraduationCap,
     HelpCircle,
     Mail,
+    Ruler,
     Sliders,
     TrendingUp,
     UserCheck,
@@ -55,6 +56,7 @@ const dataManagementItems = computed<NavEntry[]>(() => [
     { title: t('nav.admin.examScores'), routeName: 'admin.exam-scores', icon: GraduationCap },
     { title: t('nav.admin.courseGrading'), routeName: 'admin.course-grading', icon: BookOpen },
     { title: t('nav.admin.translationQuotes'), routeName: 'admin.translation-quotes', icon: FileText },
+    { title: t('nav.admin.scoreScales'), routeName: 'admin.score-scales', icon: Ruler },
 ]);
 
 const bottomNavItems = computed<NavEntry[]>(() => [

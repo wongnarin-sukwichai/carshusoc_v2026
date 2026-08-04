@@ -61,6 +61,11 @@ class DemoContentSeeder extends Seeder
             ]
         );
 
+        // 3 demo courses exercising the enrollment eligibility checks in
+        // User\CourseEnrollmentController — a normal open course, one gated
+        // behind a prerequisite, and one whose registration window has
+        // already closed (see Training.vue's eligibility() for the mirrored
+        // client-side messaging).
         $en01 = Course::firstOrCreate(
             ['code' => 'EN-01'],
             [
@@ -69,6 +74,11 @@ class DemoContentSeeder extends Seeder
                 'language' => 'อังกฤษ',
                 'level' => 1,
                 'price' => 2000,
+                'location' => 'คณะมนุษยศาสตร์และสังคมศาสตร์',
+                'start_date' => now()->addWeeks(3)->toDateString(),
+                'end_date' => now()->addWeeks(7)->toDateString(),
+                'registration_open_at' => now()->subWeek()->toDateString(),
+                'registration_close_at' => now()->addWeeks(2)->toDateString(),
                 'is_visible' => true,
                 'certificate_template_id' => $trainingTemplate->id,
             ]
@@ -83,6 +93,29 @@ class DemoContentSeeder extends Seeder
                 'level' => 2,
                 'price' => 2500,
                 'prerequisite_course_id' => $en01->id,
+                'location' => 'คณะมนุษยศาสตร์และสังคมศาสตร์',
+                'start_date' => now()->addWeeks(9)->toDateString(),
+                'end_date' => now()->addWeeks(13)->toDateString(),
+                'registration_open_at' => now()->subWeek()->toDateString(),
+                'registration_close_at' => now()->addWeeks(8)->toDateString(),
+                'is_visible' => true,
+                'certificate_template_id' => $trainingTemplate->id,
+            ]
+        );
+
+        Course::firstOrCreate(
+            ['code' => 'EN-03'],
+            [
+                'name_th' => 'ภาษาอังกฤษเพื่อการสื่อสาร ระดับ 3',
+                'name_en' => 'English Communication Level 3',
+                'language' => 'อังกฤษ',
+                'level' => 3,
+                'price' => 3000,
+                'location' => 'คณะมนุษยศาสตร์และสังคมศาสตร์',
+                'start_date' => now()->subMonths(2)->toDateString(),
+                'end_date' => now()->subMonth()->toDateString(),
+                'registration_open_at' => now()->subMonths(3)->toDateString(),
+                'registration_close_at' => now()->subMonths(2)->toDateString(),
                 'is_visible' => true,
                 'certificate_template_id' => $trainingTemplate->id,
             ]
@@ -97,6 +130,8 @@ class DemoContentSeeder extends Seeder
                 'price' => 800,
                 'exam_date' => now()->addMonth()->toDateString(),
                 'location' => 'คณะมนุษยศาสตร์และสังคมศาสตร์',
+                'registration_open_at' => now()->subWeek()->toDateString(),
+                'registration_close_at' => now()->addWeeks(3)->toDateString(),
                 'mail_delivery_available' => true,
                 'mail_delivery_fee' => 50,
                 'is_visible' => true,

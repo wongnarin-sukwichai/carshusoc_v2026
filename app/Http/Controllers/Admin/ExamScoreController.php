@@ -11,8 +11,13 @@ use App\Services\CertificateIssuer;
 use App\Services\EmailNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExamScoreController extends Controller
 {
@@ -48,6 +53,7 @@ class ExamScoreController extends Controller
             'exams' => $exams,
             'selectedExamId' => $selectedExam?->id,
             'registrations' => $registrations,
+            'importPreview' => session('importPreview'),
         ]);
     }
 
@@ -67,61 +73,97 @@ class ExamScoreController extends Controller
         return back()->with('status', ['key' => 'flash.examScore.saved']);
     }
 
-    public function importCsv(Request $request, Exam $exam): RedirectResponse
+    public function scoreTemplate(Exam $exam): BinaryFileResponse
     {
-        $data = $request->validate([
-            'csv' => ['required', 'string'],
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->fromArray(
+            ['email', 'room', 'seat_number', 'listening', 'reading', 'conversation', 'grammar'],
+            null,
+            'A1'
+        );
+        $sheet->fromArray(
+            ['somchai.dev@gmail.com', 'A101', '12', 20, 22, 18, 21],
+            null,
+            'A2'
+        );
+
+        foreach (range('A', 'G') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'score-template').'.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+
+        return response()->download($tempPath, "exam-scores-template-{$exam->code}.xlsx")->deleteFileAfterSend(true);
+    }
+
+    public function validateImport(Request $request, Exam $exam): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:10240'],
         ]);
 
+        try {
+            $rows = $this->parseImportRows($request->file('file'));
+        } catch (\Throwable $e) {
+            return back()->with('error', ['key' => 'flash.examScore.importFileUnreadable']);
+        }
+
+        if ($rows === []) {
+            return back()->with('error', ['key' => 'flash.examScore.importEmpty']);
+        }
+
+        $results = $this->validateImportRows($rows);
+
+        return back()->with('importPreview', $this->summarizePreview($results));
+    }
+
+    public function import(Request $request, Exam $exam): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:10240'],
+        ]);
+
+        try {
+            $rows = $this->parseImportRows($request->file('file'));
+        } catch (\Throwable $e) {
+            return back()->with('error', ['key' => 'flash.examScore.importFileUnreadable']);
+        }
+
+        if ($rows === []) {
+            return back()->with('error', ['key' => 'flash.examScore.importEmpty']);
+        }
+
+        $results = $this->validateImportRows($rows);
+        $invalidCount = collect($results)->where('valid', false)->count();
+
+        if ($invalidCount > 0) {
+            return back()->with([
+                'error' => ['key' => 'flash.examScore.importHasErrors'],
+                'importPreview' => $this->summarizePreview($results),
+            ]);
+        }
+
         $imported = 0;
-        $errors = [];
 
-        foreach (preg_split('/\r\n|\r|\n/', trim($data['csv'])) as $lineNumber => $line) {
-            $line = trim($line);
-
-            if ($line === '') {
-                continue;
-            }
-
-            $parts = array_map('trim', explode(',', $line));
-
-            if (count($parts) < 5) {
-                $errors[] = 'บรรทัด '.($lineNumber + 1).': รูปแบบไม่ถูกต้อง (ต้องการ email,listening,reading,conversation,grammar)';
-
-                continue;
-            }
-
-            [$email, $listening, $reading, $conversation, $grammar] = $parts;
-            $room = $parts[5] ?? null;
-            $seatNumber = $parts[6] ?? null;
-
-            $user = User::where('email', $email)->first();
-
-            if (! $user) {
-                $errors[] = 'บรรทัด '.($lineNumber + 1).": ไม่พบผู้ใช้อีเมล {$email}";
-
-                continue;
-            }
+        foreach ($results as $row) {
+            $user = User::where('email', $row['email'])->first();
 
             $scores = [
-                'listening_score' => (int) $listening,
-                'reading_score' => (int) $reading,
-                'conversation_score' => (int) $conversation,
-                'grammar_score' => (int) $grammar,
+                'listening_score' => (int) $row['listening'],
+                'reading_score' => (int) $row['reading'],
+                'conversation_score' => (int) $row['conversation'],
+                'grammar_score' => (int) $row['grammar'],
             ];
 
-            if ($room !== null && $room !== '') {
-                $scores['room'] = $room;
+            if ($row['room'] !== '') {
+                $scores['room'] = $row['room'];
             }
 
-            if ($seatNumber !== null && $seatNumber !== '') {
-                $scores['seat_number'] = $seatNumber;
-            }
-
-            if (collect($scores)->contains(fn ($score) => $score < 0 || $score > 25)) {
-                $errors[] = 'บรรทัด '.($lineNumber + 1).': คะแนนต้องอยู่ระหว่าง 0-25';
-
-                continue;
+            if ($row['seat_number'] !== '') {
+                $scores['seat_number'] = $row['seat_number'];
             }
 
             $registration = ExamRegistration::firstOrCreate(
@@ -133,13 +175,89 @@ class ExamScoreController extends Controller
             $imported++;
         }
 
-        return back()->with([
-            'status' => [
-                'key' => $errors ? 'flash.examScore.importedWithErrors' : 'flash.examScore.imported',
-                'params' => ['count' => $imported],
-            ],
-            'importErrors' => $errors,
-        ]);
+        return back()->with('status', ['key' => 'flash.examScore.imported', 'params' => ['count' => $imported]]);
+    }
+
+    /**
+     * @return array<int, array<int, mixed>>
+     */
+    protected function parseImportRows(UploadedFile $file): array
+    {
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
+
+        array_shift($rows);
+
+        return array_values(array_filter(
+            $rows,
+            fn (array $row) => collect($row)->contains(fn ($cell) => trim((string) $cell) !== '')
+        ));
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $rows
+     * @return array<int, array{row:int,email:string,listening:string,reading:string,conversation:string,grammar:string,room:string,seat_number:string,errors:array<int,string>,valid:bool}>
+     */
+    protected function validateImportRows(array $rows): array
+    {
+        $results = [];
+
+        foreach ($rows as $index => $row) {
+            $email = trim((string) ($row[0] ?? ''));
+            $room = trim((string) ($row[1] ?? ''));
+            $seatNumber = trim((string) ($row[2] ?? ''));
+            $listening = trim((string) ($row[3] ?? ''));
+            $reading = trim((string) ($row[4] ?? ''));
+            $conversation = trim((string) ($row[5] ?? ''));
+            $grammar = trim((string) ($row[6] ?? ''));
+
+            $errors = [];
+            $sections = ['listening' => $listening, 'reading' => $reading, 'conversation' => $conversation, 'grammar' => $grammar];
+
+            if ($email === '') {
+                $errors[] = 'ต้องระบุอีเมล';
+            }
+
+            foreach ($sections as $label => $value) {
+                if ($value === '') {
+                    $errors[] = "ต้องระบุคะแนน {$label}";
+                } elseif (! is_numeric($value) || (int) $value < 0 || (int) $value > 25) {
+                    $errors[] = "คะแนน {$label} ต้องเป็นตัวเลข 0-25";
+                }
+            }
+
+            if ($email !== '' && ! User::where('email', $email)->exists()) {
+                $errors[] = "ไม่พบผู้ใช้อีเมล {$email}";
+            }
+
+            $results[] = [
+                'row' => $index + 2,
+                'email' => $email,
+                'listening' => $listening,
+                'reading' => $reading,
+                'conversation' => $conversation,
+                'grammar' => $grammar,
+                'room' => $room,
+                'seat_number' => $seatNumber,
+                'errors' => $errors,
+                'valid' => $errors === [],
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * @param  array<int, array{row:int,email:string,listening:string,reading:string,conversation:string,grammar:string,room:string,seat_number:string,errors:array<int,string>,valid:bool}>  $results
+     * @return array{rows: array<int, mixed>, validCount: int, invalidCount: int}
+     */
+    protected function summarizePreview(array $results): array
+    {
+        return [
+            'rows' => $results,
+            'validCount' => collect($results)->where('valid', true)->count(),
+            'invalidCount' => collect($results)->where('valid', false)->count(),
+        ];
     }
 
     /**

@@ -75,5 +75,24 @@ class TranslationCenterTest extends TestCase
         // Another user must not be able to download it.
         $otherUser = User::factory()->create();
         $this->actingAs($otherUser)->get(route('user.translations.download', $translation))->assertForbidden();
+
+        // 7) admin can also view the translated file directly
+        $this->actingAs($admin, 'admin')->get(route('admin.translation-requests.translated', $translation))->assertOk();
+    }
+
+    public function test_admin_viewing_translated_file_before_delivery_returns_404()
+    {
+        $admin = Admin::factory()->create();
+        $translation = TranslationRequest::create([
+            'user_id' => User::factory()->create()->id,
+            'file_name' => 'resume.pdf',
+            'source_lang' => 'ไทย',
+            'target_lang' => 'อังกฤษ',
+            'status' => 'translating',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.translation-requests.translated', $translation))
+            ->assertNotFound();
     }
 }

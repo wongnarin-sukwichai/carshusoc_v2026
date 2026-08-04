@@ -23,9 +23,9 @@ const { t } = useI18n();
 // centerCode links a nav item to service_centers.code so it can be hidden
 // when an admin toggles that center's visibility off (see ServiceCenter model).
 const allNavItems = computed<NavEntry[]>(() => [
-    { title: t('nav.user.training'), routeName: 'user.training', icon: BookOpen, centerCode: 'training' },
-    { title: t('nav.user.exam'), routeName: 'user.exam', icon: GraduationCap, centerCode: 'exam' },
-    { title: t('nav.user.translation'), routeName: 'user.translation', icon: FileText, centerCode: 'translation' },
+    { title: t('nav.user.training'), routeName: 'user.training', icon: BookOpen, iconClass: 'text-blue-600', centerCode: 'training' },
+    { title: t('nav.user.exam'), routeName: 'user.exam', icon: GraduationCap, iconClass: 'text-violet-600', centerCode: 'exam' },
+    { title: t('nav.user.translation'), routeName: 'user.translation', icon: FileText, iconClass: 'text-amber-600', centerCode: 'translation' },
     { title: t('nav.user.portfolio'), routeName: 'user.portfolio', icon: CheckCircle, iconClass: 'text-emerald-600' },
 ]);
 

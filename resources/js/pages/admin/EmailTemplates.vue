@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,13 +62,22 @@ const expandedId = ref<number | null>(null);
 <template>
     <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.admin.emailTemplates')" />
-            <HeadingSmall :title="t('admin.emailTemplates.title')" :description="t('admin.emailTemplates.description')" />
 
+        <div class="p-5 bg-white border shadow-sm rounded-2xl border-slate-200">
+        <div class="pb-2 border-b border-slate-100">
+            <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                <Mail class="w-4 h-4 text-indigo-600" />
+                {{ t('admin.emailTemplates.title') }}
+            </h2>
+            <p class="text-[10px] text-slate-500">{{ t('admin.emailTemplates.description') }}</p>
+        </div>
+
+        <div class="mt-4">
             <div class="space-y-3">
                 <div v-for="template in templates" :key="template.id" class="overflow-hidden border shadow-sm rounded-xl border-slate-200">
                     <button
                         type="button"
-                        class="flex items-center justify-between w-full gap-2 p-4 text-left"
+                        class="flex items-center justify-between w-full gap-2 p-4 text-left bg-slate-50"
                         @click="expandedId = expandedId === template.id ? null : template.id"
                     >
                         <div class="flex items-center gap-1.5">
@@ -112,5 +120,7 @@ const expandedId = ref<number | null>(null);
                     </Transition>
                 </div>
             </div>
+        </div>
+        </div>
     </div>
 </template>

@@ -49,6 +49,14 @@ class CourseEnrollmentController extends Controller
             return [false, 'อยู่ระหว่างการอบรมหรือรอตรวจสอบสลิป'];
         }
 
+        if ($course->registration_open_at && now()->lt($course->registration_open_at->startOfDay())) {
+            return [false, 'ยังไม่เปิดรับสมัคร (เปิดวันที่ '.$course->registration_open_at->format('d/m/Y').')'];
+        }
+
+        if ($course->registration_close_at && now()->gt($course->registration_close_at->endOfDay())) {
+            return [false, 'หมดเขตรับสมัครแล้ว (ปิดวันที่ '.$course->registration_close_at->format('d/m/Y').')'];
+        }
+
         if ($course->prerequisite_course_id) {
             $prerequisitePassed = CourseEnrollment::where('user_id', $user->id)
                 ->where('course_id', $course->prerequisite_course_id)

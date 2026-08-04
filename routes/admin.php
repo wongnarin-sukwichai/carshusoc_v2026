@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\ExamScoreController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\RegistrantController;
+use App\Http\Controllers\Admin\ScoreScaleController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\TranslationRequestController;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('exams/{exam}/toggle-visibility', [ExamController::class, 'toggleVisibility'])->name('exams.toggle-visibility');
         Route::get('translation-quotes', [TranslationRequestController::class, 'index'])->name('translation-quotes');
         Route::get('translation-requests/{translationRequest}/source', [TranslationRequestController::class, 'source'])->name('translation-requests.source');
+        Route::get('translation-requests/{translationRequest}/translated', [TranslationRequestController::class, 'translated'])->name('translation-requests.translated');
         Route::post('translation-requests/{translationRequest}/quote', [TranslationRequestController::class, 'quote'])->name('translation-requests.quote');
         Route::post('translation-requests/{translationRequest}/deliver', [TranslationRequestController::class, 'deliver'])->name('translation-requests.deliver');
 
@@ -52,10 +54,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('exam-scores', [ExamScoreController::class, 'index'])->name('exam-scores');
         Route::put('exam-registrations/{registration}', [ExamScoreController::class, 'updateScore'])->name('exam-registrations.update');
-        Route::post('exams/{exam}/import-scores', [ExamScoreController::class, 'importCsv'])->name('exams.import-scores');
+        Route::get('exams/{exam}/score-template', [ExamScoreController::class, 'scoreTemplate'])->name('exams.score-template');
+        Route::post('exams/{exam}/import-scores/validate', [ExamScoreController::class, 'validateImport'])->name('exams.import-scores.validate');
+        Route::post('exams/{exam}/import-scores', [ExamScoreController::class, 'import'])->name('exams.import-scores');
 
         Route::get('course-grading', [CourseGradingController::class, 'index'])->name('course-grading');
         Route::post('course-grading/save', [CourseGradingController::class, 'gradeBulk'])->name('course-grading.save');
+
+        Route::get('score-scales', [ScoreScaleController::class, 'index'])->name('score-scales');
+        Route::post('score-scales', [ScoreScaleController::class, 'store'])->name('score-scales.store');
+        Route::put('score-scales/{scoreScale}', [ScoreScaleController::class, 'update'])->name('score-scales.update');
+        Route::patch('score-scales/{scoreScale}/toggle-active', [ScoreScaleController::class, 'toggleActive'])->name('score-scales.toggle-active');
+        Route::delete('score-scales/{scoreScale}', [ScoreScaleController::class, 'destroy'])->name('score-scales.destroy');
 
         // Reserved for admin: managing admin accounts, email templates, and
         // certificate templates is system configuration, not day-to-day operations.

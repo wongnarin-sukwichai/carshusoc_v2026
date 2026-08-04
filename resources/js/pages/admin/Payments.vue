@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Badge, type BadgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { DollarSign } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { CheckCircle2, Clock, DollarSign, ListChecks, XCircle, type LucideIcon } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({ layout: AdminLayout });
@@ -23,7 +24,7 @@ interface PaymentRow {
     created_at: string;
 }
 
-defineProps<{
+const props = defineProps<{
     payments: PaymentRow[];
 }>();
 
@@ -48,31 +49,95 @@ const statusVariant: Record<PaymentRow['status'], NonNullable<BadgeVariants['var
     approved: 'success',
     rejected: 'destructive',
 };
+
+type StatusTab = 'all' | PaymentRow['status'];
+
+const activeTab = ref<StatusTab>('all');
+
+const tabIcon: Record<StatusTab, LucideIcon> = {
+    all: ListChecks,
+    pending: Clock,
+    approved: CheckCircle2,
+    rejected: XCircle,
+};
+
+const tabColorClass: Record<StatusTab, string> = {
+    all: 'text-slate-600 data-[state=active]:bg-slate-200 data-[state=active]:text-slate-800',
+    pending: 'text-amber-600 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-800',
+    approved: 'text-emerald-600 data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-800',
+    rejected: 'text-red-600 data-[state=active]:bg-red-100 data-[state=active]:text-red-800',
+};
+
+// Same status colors, carried onto each payment card's border so the list
+// reads consistently with whichever tab color it belongs to.
+const cardBorderClass: Record<PaymentRow['status'], string> = {
+    pending: 'border-amber-300',
+    approved: 'border-emerald-300',
+    rejected: 'border-red-300',
+};
+
+const tabs = computed<{ value: StatusTab; label: string; count: number }[]>(() => [
+    { value: 'all', label: t('admin.payments.tabAll'), count: props.payments.length },
+    { value: 'pending', label: statusLabel.value.pending, count: props.payments.filter((p) => p.status === 'pending').length },
+    { value: 'approved', label: statusLabel.value.approved, count: props.payments.filter((p) => p.status === 'approved').length },
+    { value: 'rejected', label: statusLabel.value.rejected, count: props.payments.filter((p) => p.status === 'rejected').length },
+]);
+
+const filteredPayments = computed(() =>
+    activeTab.value === 'all' ? props.payments : props.payments.filter((p) => p.status === activeTab.value),
+);
 </script>
 
 <template>
-    <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+    <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.admin.payments')" />
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="border-b border-slate-100 pb-2">
+        <div class="p-5 bg-white border shadow-sm rounded-2xl border-slate-200">
+            <div class="pb-2 border-b border-slate-100">
                 <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
-                    <DollarSign class="h-4 w-4 text-indigo-600" />
+                    <DollarSign class="w-4 h-4 text-indigo-600" />
                     {{ t('admin.payments.title') }}
                 </h2>
                 <p class="text-[10px] text-slate-500">{{ t('admin.payments.description') }}</p>
             </div>
 
-            <div class="mt-4 space-y-2">
-                <p v-if="payments.length === 0" class="rounded-xl border border-dashed bg-slate-50 py-8 text-center text-xs italic text-slate-400">
-                    {{ t('admin.payments.empty') }}
-                </p>
+            <p v-if="payments.length === 0" class="py-8 mt-4 text-xs italic text-center border border-dashed rounded-xl bg-slate-50 text-slate-400">
+                {{ t('admin.payments.empty') }}
+            </p>
 
-                <div
-                    v-for="payment in payments"
-                    :key="payment.id"
-                    class="flex flex-col items-start justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs md:flex-row md:items-center"
-                >
+            <template v-else>
+                <Tabs v-model="activeTab" class="w-full mt-4">
+                    <TabsList>
+                        <TabsTrigger
+                            v-for="tab in tabs"
+                            :key="tab.value"
+                            :value="tab.value"
+                            :class="['gap-1.5', tabColorClass[tab.value]]"
+                        >
+                            <component :is="tabIcon[tab.value]" class="w-4 h-4" />
+                            {{ tab.label }}
+                            <Badge variant="neutral" class="ml-1">{{ tab.count }}</Badge>
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <Transition name="fade" mode="out-in">
+                    <div :key="activeTab" class="mt-3 space-y-2">
+                        <p
+                            v-if="filteredPayments.length === 0"
+                            class="py-8 text-xs italic text-center border border-dashed rounded-xl bg-slate-50 text-slate-400"
+                        >
+                            {{ t('admin.payments.emptyFiltered') }}
+                        </p>
+
+                        <div
+                            v-for="payment in filteredPayments"
+                            :key="payment.id"
+                            :class="[
+                                'flex flex-col items-start justify-between gap-4 rounded-xl border bg-slate-50 p-4 text-xs md:flex-row md:items-center',
+                                cardBorderClass[payment.status],
+                            ]"
+                        >
                     <div>
                         <div class="mb-1.5 flex flex-wrap items-center gap-2">
                             <span class="rounded bg-indigo-100 px-1.5 py-0.5 text-[9px] font-bold text-indigo-800">{{ payment.label }}</span>
@@ -107,7 +172,9 @@ const statusVariant: Record<PaymentRow['status'], NonNullable<BadgeVariants['var
                         }}</Button>
                     </div>
                 </div>
-            </div>
+                    </div>
+                </Transition>
+            </template>
         </div>
     </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user/UserLayout.vue';
+import { formatDate } from '@/lib/date';
 import { Head } from '@inertiajs/vue3';
 import { Award, Download, ShieldCheck } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
@@ -50,13 +51,22 @@ const examCerts = () => props.certificates.filter((c) => c.kind === 'exam');
                         <div
                             v-for="cert in courseCerts()"
                             :key="cert.id"
-                            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+                            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
                         >
-                            <div>
-                                <p class="font-medium">{{ cert.title }}</p>
-                                <p class="text-xs text-muted-foreground">{{ t('user.portfolio.issuedOn', { date: cert.issued_at }) }}</p>
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                                    <Award class="h-4 w-4" />
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="truncate font-medium">{{ cert.title }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ t('user.portfolio.issuedOn', { date: formatDate(cert.issued_at) }) }}</p>
+                                </div>
                             </div>
-                            <Button as-child size="sm" variant="secondary">
+                            <Button
+                                as-child
+                                size="sm"
+                                class="shrink-0 border-transparent bg-[#217346] text-white hover:bg-[#1a5c38] hover:text-white"
+                            >
                                 <a :href="route('user.certificates.download', cert.id)"
                                     ><Download class="mr-1 h-3 w-3" />{{ t('user.portfolio.download') }}</a
                                 >
@@ -76,13 +86,22 @@ const examCerts = () => props.certificates.filter((c) => c.kind === 'exam');
                         <div
                             v-for="cert in examCerts()"
                             :key="cert.id"
-                            class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+                            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
                         >
-                            <div>
-                                <p class="font-medium">{{ cert.title }}</p>
-                                <p class="text-xs text-muted-foreground">{{ t('user.portfolio.issuedOn', { date: cert.issued_at }) }}</p>
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600">
+                                    <Award class="h-4 w-4" />
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="truncate font-medium">{{ cert.title }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ t('user.portfolio.issuedOn', { date: formatDate(cert.issued_at) }) }}</p>
+                                </div>
                             </div>
-                            <Button as-child size="sm" variant="secondary">
+                            <Button
+                                as-child
+                                size="sm"
+                                class="shrink-0 border-transparent bg-[#217346] text-white hover:bg-[#1a5c38] hover:text-white"
+                            >
                                 <a :href="route('user.certificates.download', cert.id)"
                                     ><Download class="mr-1 h-3 w-3" />{{ t('user.portfolio.download') }}</a
                                 >

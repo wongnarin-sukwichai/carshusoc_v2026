@@ -45,6 +45,13 @@ class TranslationRequestController extends Controller
         return Storage::disk('local')->response($translationRequest->source_file_path, $translationRequest->file_name);
     }
 
+    public function translated(TranslationRequest $translationRequest)
+    {
+        abort_unless($translationRequest->translated_file_path, 404);
+
+        return Storage::disk('public')->response($translationRequest->translated_file_path, $translationRequest->file_name);
+    }
+
     public function quote(Request $request, TranslationRequest $translationRequest): RedirectResponse
     {
         abort_if($translationRequest->status !== 'submitted', 422, 'คำขอนี้ถูกดำเนินการแล้ว');

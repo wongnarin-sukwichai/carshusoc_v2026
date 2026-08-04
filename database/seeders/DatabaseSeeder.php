@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             CourseEnrollmentSeeder::class,
             TranslationRequestSeeder::class,
             ExamRegistrationSeeder::class,
+            TestUserDemoDataSeeder::class,
         ]);
     }
 }

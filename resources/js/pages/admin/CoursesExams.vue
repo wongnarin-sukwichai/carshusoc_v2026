@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -225,9 +224,17 @@ const toggleExamVisibility = (exam: ExamRow) => {
 <template>
     <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.admin.coursesExams')" />
-        <HeadingSmall :title="t('admin.coursesExams.title')" :description="t('admin.coursesExams.description')" />
 
-        <Tabs default-value="course" class="w-full">
+        <div class="p-5 bg-white border shadow-sm rounded-2xl border-slate-200">
+            <div class="pb-2 border-b border-slate-100">
+                <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                    <BookOpen class="w-4 h-4 text-indigo-600" />
+                    {{ t('admin.coursesExams.title') }}
+                </h2>
+                <p class="text-[10px] text-slate-500">{{ t('admin.coursesExams.description') }}</p>
+            </div>
+
+        <Tabs default-value="course" class="w-full mt-4">
             <TabsList>
                 <TabsTrigger value="course" class="gap-1.5">
                     <BookOpen class="w-4 h-4 text-blue-600" />
@@ -242,7 +249,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
             <!-- Courses -->
             <TabsContent value="course" class="p-4 space-y-4 border border-blue-200 shadow-sm rounded-xl bg-blue-50/40">
                 <div class="flex items-center justify-between">
-                    <h3 class="flex items-center gap-2 text-sm font-bold text-blue-900">
+                    <h3 class="flex items-center gap-2 text-xs font-bold text-blue-900">
                         <span class="flex items-center justify-center text-blue-600 bg-blue-100 rounded-full h-7 w-7">
                             <BookOpen class="w-4 h-4" />
                         </span>
@@ -255,7 +262,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
 
                 <!-- New course form -->
                 <Transition name="fade">
-                    <form v-if="showNewCourseForm" class="p-4 space-y-3 bg-white border-2 border-dashed rounded-xl" @submit.prevent="createCourse">
+                    <form v-if="showNewCourseForm" class="space-y-3 rounded-xl border-2 border-dashed bg-white p-4" @submit.prevent="createCourse">
                         <div class="grid grid-cols-2 gap-2">
                             <div class="grid gap-1">
                                 <Label for="new-course-code">{{ t('admin.coursesExams.fieldCode') }}</Label>
@@ -264,7 +271,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
                             </div>
                             <div class="grid gap-1">
                                 <Label for="new-course-language">{{ t('admin.coursesExams.fieldLanguage') }}</Label>
-                                <select id="new-course-language" v-model="newCourseForm.language" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                <select id="new-course-language" v-model="newCourseForm.language" class="h-10 rounded-md border bg-background px-3 text-sm">
                                     <option value="อังกฤษ">อังกฤษ</option>
                                     <option value="ไทย">ไทย</option>
                                     <option value="ลาว">ลาว</option>
@@ -296,7 +303,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
 
                         <div class="grid gap-1">
                             <Label for="new-course-prerequisite">{{ t('admin.coursesExams.fieldPrerequisite') }}</Label>
-                            <select id="new-course-prerequisite" v-model="newCourseForm.prerequisite_course_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                            <select id="new-course-prerequisite" v-model="newCourseForm.prerequisite_course_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                 <option :value="null">{{ t('admin.coursesExams.prerequisiteNone') }}</option>
                                 <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.code }}: {{ course.name_th }}</option>
                             </select>
@@ -350,7 +357,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
 
                         <div class="grid gap-1">
                             <Label for="new-course-cert-template">{{ t('admin.coursesExams.fieldCertTemplate') }}</Label>
-                            <select id="new-course-cert-template" v-model="newCourseForm.certificate_template_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                            <select id="new-course-cert-template" v-model="newCourseForm.certificate_template_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                 <option :value="null">{{ t('admin.coursesExams.certTemplateDefault') }}</option>
                                 <option v-for="tpl in trainingTemplates()" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
                             </select>
@@ -405,8 +412,8 @@ const toggleExamVisibility = (exam: ExamRow) => {
                                         :title="course.is_visible ? t('admin.coursesExams.hide') : t('admin.coursesExams.show')"
                                         @click="toggleCourseVisibility(course)"
                                     >
-                                        <EyeOff v-if="course.is_visible" class="h-3.5 w-3.5" />
-                                        <Eye v-else class="h-3.5 w-3.5 text-red-500" />
+                                        <Eye v-if="course.is_visible" class="h-3.5 w-3.5 text-emerald-600" />
+                                        <EyeOff v-else class="h-3.5 w-3.5 text-slate-400" />
                                     </button>
                                 </td>
                             </tr>
@@ -437,7 +444,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
                                     </div>
                                     <div class="grid gap-1">
                                         <Label :for="`course-language-${editing.id}`">{{ t('admin.coursesExams.fieldLanguage') }}</Label>
-                                        <select :id="`course-language-${editing.id}`" v-model="courseEditForms[editing.id].language" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                        <select :id="`course-language-${editing.id}`" v-model="courseEditForms[editing.id].language" class="h-10 rounded-md border bg-background px-3 text-sm">
                                             <option value="อังกฤษ">อังกฤษ</option>
                                             <option value="ไทย">ไทย</option>
                                             <option value="ลาว">ลาว</option>
@@ -471,7 +478,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
 
                                 <div class="grid gap-1">
                                     <Label :for="`course-prerequisite-${editing.id}`">{{ t('admin.coursesExams.fieldPrerequisite') }}</Label>
-                                    <select :id="`course-prerequisite-${editing.id}`" v-model="courseEditForms[editing.id].prerequisite_course_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                    <select :id="`course-prerequisite-${editing.id}`" v-model="courseEditForms[editing.id].prerequisite_course_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                         <option :value="null">{{ t('admin.coursesExams.prerequisiteNone') }}</option>
                                         <option v-for="course in courses.filter((c) => c.id !== editing.id)" :key="course.id" :value="course.id">
                                             {{ course.code }}: {{ course.name_th }}
@@ -537,7 +544,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
 
                                 <div class="grid gap-1">
                                     <Label :for="`course-cert-template-${editing.id}`">{{ t('admin.coursesExams.fieldCertTemplate') }}</Label>
-                                    <select :id="`course-cert-template-${editing.id}`" v-model="courseEditForms[editing.id].certificate_template_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                    <select :id="`course-cert-template-${editing.id}`" v-model="courseEditForms[editing.id].certificate_template_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                         <option :value="null">{{ t('admin.coursesExams.certTemplateDefault') }}</option>
                                         <option v-for="tpl in trainingTemplates()" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
                                     </select>
@@ -577,7 +584,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
 
                 <!-- New exam form -->
                 <Transition name="fade">
-                    <form v-if="showNewExamForm" class="p-4 space-y-3 bg-white border-2 border-dashed rounded-xl" @submit.prevent="createExam">
+                    <form v-if="showNewExamForm" class="space-y-3 rounded-xl border-2 border-dashed bg-white p-4" @submit.prevent="createExam">
                         <div class="grid grid-cols-2 gap-2">
                             <div class="grid gap-1">
                                 <Label for="new-exam-code">{{ t('admin.coursesExams.fieldCode') }}</Label>
@@ -586,7 +593,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
                             </div>
                             <div class="grid gap-1">
                                 <Label for="new-exam-type">{{ t('admin.coursesExams.exam.type') }}</Label>
-                                <select id="new-exam-type" v-model="newExamForm.type" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                <select id="new-exam-type" v-model="newExamForm.type" class="h-10 rounded-md border bg-background px-3 text-sm">
                                     <option value="EPT">EPT</option>
                                     <option value="TOEIC">TOEIC</option>
                                     <option value="IELTS">IELTS</option>
@@ -648,14 +655,14 @@ const toggleExamVisibility = (exam: ExamRow) => {
                         <div class="grid grid-cols-2 gap-2">
                             <div class="grid gap-1">
                                 <Label for="new-exam-cert-template">{{ t('admin.coursesExams.fieldCertTemplate') }}</Label>
-                                <select id="new-exam-cert-template" v-model="newExamForm.certificate_template_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                <select id="new-exam-cert-template" v-model="newExamForm.certificate_template_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                     <option :value="null">{{ t('admin.coursesExams.certTemplateDefault') }}</option>
                                     <option v-for="tpl in examTemplates()" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
                                 </select>
                             </div>
                             <div class="grid gap-1">
                                 <Label for="new-exam-score-scale">{{ t('admin.coursesExams.exam.scoreScale') }}</Label>
-                                <select id="new-exam-score-scale" v-model="newExamForm.score_scale_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                <select id="new-exam-score-scale" v-model="newExamForm.score_scale_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                     <option :value="null">{{ t('admin.coursesExams.exam.scoreScaleDefault') }}</option>
                                     <option v-for="scale in scoreScales" :key="scale.id" :value="scale.id">{{ scale.name }} (v{{ scale.version }})</option>
                                 </select>
@@ -720,8 +727,8 @@ const toggleExamVisibility = (exam: ExamRow) => {
                                         :title="exam.is_visible ? t('admin.coursesExams.hide') : t('admin.coursesExams.show')"
                                         @click="toggleExamVisibility(exam)"
                                     >
-                                        <EyeOff v-if="exam.is_visible" class="h-3.5 w-3.5" />
-                                        <Eye v-else class="h-3.5 w-3.5 text-red-500" />
+                                        <Eye v-if="exam.is_visible" class="h-3.5 w-3.5 text-emerald-600" />
+                                        <EyeOff v-else class="h-3.5 w-3.5 text-slate-400" />
                                     </button>
                                 </td>
                             </tr>
@@ -752,7 +759,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
                                     </div>
                                     <div class="grid gap-1">
                                         <Label :for="`exam-type-${editing.id}`">{{ t('admin.coursesExams.exam.type') }}</Label>
-                                        <select :id="`exam-type-${editing.id}`" v-model="examEditForms[editing.id].type" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                        <select :id="`exam-type-${editing.id}`" v-model="examEditForms[editing.id].type" class="h-10 rounded-md border bg-background px-3 text-sm">
                                             <option value="EPT">EPT</option>
                                             <option value="TOEIC">TOEIC</option>
                                             <option value="IELTS">IELTS</option>
@@ -826,14 +833,14 @@ const toggleExamVisibility = (exam: ExamRow) => {
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="grid gap-1">
                                         <Label :for="`exam-cert-template-${editing.id}`">{{ t('admin.coursesExams.fieldCertTemplate') }}</Label>
-                                        <select :id="`exam-cert-template-${editing.id}`" v-model="examEditForms[editing.id].certificate_template_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                        <select :id="`exam-cert-template-${editing.id}`" v-model="examEditForms[editing.id].certificate_template_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                             <option :value="null">{{ t('admin.coursesExams.certTemplateDefault') }}</option>
                                             <option v-for="tpl in examTemplates()" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
                                         </select>
                                     </div>
                                     <div class="grid gap-1">
                                         <Label :for="`exam-score-scale-${editing.id}`">{{ t('admin.coursesExams.exam.scoreScale') }}</Label>
-                                        <select :id="`exam-score-scale-${editing.id}`" v-model="examEditForms[editing.id].score_scale_id" class="h-10 px-3 text-sm border rounded-md bg-background">
+                                        <select :id="`exam-score-scale-${editing.id}`" v-model="examEditForms[editing.id].score_scale_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                             <option :value="null">{{ t('admin.coursesExams.exam.scoreScaleDefault') }}</option>
                                             <option v-for="scale in scoreScales" :key="scale.id" :value="scale.id">{{ scale.name }} (v{{ scale.version }})</option>
                                         </select>
@@ -867,5 +874,6 @@ const toggleExamVisibility = (exam: ExamRow) => {
                 </Transition>
             </TabsContent>
         </Tabs>
+        </div>
     </div>
 </template>

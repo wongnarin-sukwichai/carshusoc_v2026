@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Badge, type BadgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { CheckCircle2, Clock, ListChecks, Loader2, Receipt, type LucideIcon } from 'lucide-vue-next';
+import { CheckCircle2, Clock, ListChecks, NotebookPen, Receipt, type LucideIcon } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -94,7 +93,7 @@ const tabIcon: Record<StatusTab, LucideIcon> = {
     all: ListChecks,
     submitted: Clock,
     quote_sent: Receipt,
-    translating: Loader2,
+    translating: NotebookPen,
     completed: CheckCircle2,
 };
 
@@ -129,11 +128,20 @@ const filteredRequests = computed(() =>
 </script>
 
 <template>
-    <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+    <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.admin.translationQuotes')" />
-            <HeadingSmall :title="t('admin.translationQuotes.title')" :description="t('admin.translationQuotes.description')" />
 
-            <p v-if="requests.length === 0" class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <div class="p-5 bg-white border shadow-sm rounded-2xl border-slate-200">
+        <div class="pb-2 border-b border-slate-100">
+            <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                <Receipt class="w-4 h-4 text-indigo-600" />
+                {{ t('admin.translationQuotes.title') }}
+            </h2>
+            <p class="text-[10px] text-slate-500">{{ t('admin.translationQuotes.description') }}</p>
+        </div>
+
+        <div class="mt-4">
+            <p v-if="requests.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                 {{ t('admin.translationQuotes.empty') }}
             </p>
 
@@ -146,7 +154,7 @@ const filteredRequests = computed(() =>
                             :value="tab.value"
                             :class="['gap-1.5', tabColorClass[tab.value]]"
                         >
-                            <component :is="tabIcon[tab.value]" class="h-4 w-4" />
+                            <component :is="tabIcon[tab.value]" class="w-4 h-4" />
                             {{ tab.label }}
                             <Badge variant="neutral" class="ml-1">{{ tab.count }}</Badge>
                         </TabsTrigger>
@@ -154,8 +162,8 @@ const filteredRequests = computed(() =>
                 </Tabs>
 
                 <Transition name="fade" mode="out-in">
-                    <div :key="activeTab" class="space-y-3">
-                        <p v-if="filteredRequests.length === 0" class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    <div :key="activeTab" class="mt-4 space-y-3">
+                        <p v-if="filteredRequests.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                             {{ t('admin.translationQuotes.emptyFiltered') }}
                         </p>
 
@@ -163,23 +171,30 @@ const filteredRequests = computed(() =>
                             <div
                                 v-for="request in filteredRequests"
                                 :key="request.id"
-                                :class="['rounded-xl border-2 p-4 shadow-sm', cardBorderClass[request.status]]"
+                                :class="['rounded-xl border p-4 shadow-sm', cardBorderClass[request.status]]"
                             >
                                 <div class="flex flex-col justify-between gap-2 md:flex-row md:items-start">
                                     <div>
-                                        <div class="mb-1 flex items-center gap-2 text-xs">
+                                        <div class="flex items-center gap-2 mb-1 text-xs">
                                             <span class="rounded bg-muted px-1.5 py-0.5 font-mono">#{{ request.id }}</span>
                                             <span class="text-muted-foreground">{{ request.user_name }} ({{ request.user_email }})</span>
                                         </div>
-                                        <p class="font-medium">{{ request.file_name }}</p>
+                                        <a
+                                            :href="route('admin.translation-requests.source', request.id)"
+                                            target="_blank"
+                                            :title="t('admin.translationQuotes.viewSource')"
+                                            class="font-medium cursor-pointer hover:text-primary"
+                                            >{{ request.file_name }}</a
+                                        >
                                         <p class="text-xs text-muted-foreground">
                                             {{ t('admin.translationQuotes.langPair', { source: request.source_lang, target: request.target_lang }) }}
                                         </p>
                                         <a
-                                            :href="route('admin.translation-requests.source', request.id)"
+                                            v-if="request.status === 'completed' && request.has_translated_file"
+                                            :href="route('admin.translation-requests.translated', request.id)"
                                             target="_blank"
-                                            class="text-xs text-primary underline"
-                                            >{{ t('admin.translationQuotes.viewSource') }}</a
+                                            class="text-xs underline text-primary"
+                                            >{{ t('admin.translationQuotes.viewTranslated') }}</a
                                         >
                                     </div>
 
@@ -195,14 +210,14 @@ const filteredRequests = computed(() =>
                                     </div>
                                 </div>
 
-                                <div v-if="request.status === 'submitted'" class="mt-3 flex flex-wrap items-end gap-2 border-t pt-3">
+                                <div v-if="request.status === 'submitted'" class="flex flex-wrap items-end gap-2 pt-3 mt-3 border-t">
                                     <div class="grid gap-1">
                                         <label class="text-xs font-medium">{{ t('admin.translationQuotes.estimatedPrice') }}</label>
                                         <input
                                             v-model.number="draftFor(request.id).estimated_price"
                                             type="number"
                                             min="0"
-                                            class="h-9 w-28 rounded border px-2 text-sm"
+                                            class="px-2 text-sm border rounded h-9 w-28"
                                         />
                                     </div>
                                     <div class="grid gap-1">
@@ -211,13 +226,13 @@ const filteredRequests = computed(() =>
                                             v-model.number="draftFor(request.id).delivery_days"
                                             type="number"
                                             min="1"
-                                            class="h-9 w-24 rounded border px-2 text-sm"
+                                            class="w-24 px-2 text-sm border rounded h-9"
                                         />
                                     </div>
                                     <Button size="sm" @click="sendQuote(request)">{{ t('admin.translationQuotes.sendQuote') }}</Button>
                                 </div>
 
-                                <div v-else-if="request.status === 'translating'" class="mt-3 flex flex-wrap items-end gap-2 border-t pt-3">
+                                <div v-else-if="request.status === 'translating'" class="flex flex-wrap items-end gap-2 pt-3 mt-3 border-t">
                                     <input type="file" class="text-sm" @change="onDeliverFileChange(request, $event)" />
                                     <Button size="sm" :disabled="!deliverFiles[request.id]" @click="deliver(request)">{{
                                         t('admin.translationQuotes.deliverResult')
@@ -228,5 +243,7 @@ const filteredRequests = computed(() =>
                     </div>
                 </Transition>
             </template>
+        </div>
+        </div>
     </div>
 </template>

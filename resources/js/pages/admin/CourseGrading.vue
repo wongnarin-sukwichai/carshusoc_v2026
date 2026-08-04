@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Badge, type BadgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { CheckCircle2, XCircle } from 'lucide-vue-next';
-import { computed, reactive, watch } from 'vue';
+import { CheckCircle2, GraduationCap, Search, XCircle } from 'lucide-vue-next';
+import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({ layout: AdminLayout });
@@ -45,7 +45,17 @@ const changeCourse = (event: Event) => {
 // differs from their current DB status are included in that request.
 const decisions = reactive<Record<number, boolean>>({});
 
-const gradableEnrollments = computed(() => props.enrollments.filter((enrollment) => enrollment.status !== 'pending_payment'));
+const search = ref('');
+
+const filteredEnrollments = computed(() => {
+    const query = search.value.trim().toLowerCase();
+
+    if (!query) return props.enrollments;
+
+    return props.enrollments.filter((e) => e.user_name.toLowerCase().includes(query) || e.user_email.toLowerCase().includes(query));
+});
+
+const gradableEnrollments = computed(() => filteredEnrollments.value.filter((enrollment) => enrollment.status !== 'pending_payment'));
 
 watch(
     () => props.enrollments,
@@ -105,48 +115,69 @@ const statusVariant: Record<EnrollmentRow['status'], NonNullable<BadgeVariants['
 </script>
 
 <template>
-    <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+    <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.admin.courseGrading')" />
-        <div class="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-            <HeadingSmall :title="t('admin.courseGrading.title')" :description="t('admin.courseGrading.description')" />
-            <select class="h-9 rounded-md border bg-background px-3 text-sm" :value="selectedCourseId ?? ''" @change="changeCourse">
+
+        <div class="p-5 bg-white border shadow-sm rounded-2xl border-slate-200">
+        <div class="flex flex-col justify-between gap-3 pb-2 border-b border-slate-100 md:flex-row md:items-center">
+            <div>
+                <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                    <GraduationCap class="w-4 h-4 text-indigo-600" />
+                    {{ t('admin.courseGrading.title') }}
+                </h2>
+                <p class="text-[10px] text-slate-500">{{ t('admin.courseGrading.description') }}</p>
+            </div>
+            <select class="px-3 text-sm border rounded-md h-9 bg-background" :value="selectedCourseId ?? ''" @change="changeCourse">
                 <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.code }}: {{ course.name_th }}</option>
             </select>
         </div>
 
+        <div class="mt-4">
         <Transition name="fade" mode="out-in">
             <div :key="selectedCourseId ?? 'none'" class="flex flex-col gap-4">
-                <div v-if="enrollments.length === 0" class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                <div v-if="enrollments.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                     {{ t('admin.courseGrading.empty') }}
                 </div>
 
                 <template v-else>
-                    <div v-if="gradableEnrollments.length > 0" class="flex flex-wrap items-center gap-2">
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            class="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-                            @click="selectAllPass"
-                        >
-                            <CheckCircle2 class="h-4 w-4" />
-                            {{ t('admin.courseGrading.selectAllPass') }}
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            class="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                            @click="selectNone"
-                        >
-                            <XCircle class="h-4 w-4" />
-                            {{ t('admin.courseGrading.selectNone') }}
-                        </Button>
-                        <Button type="button" size="sm" class="ml-auto" @click="saveGrades">{{ t('admin.courseGrading.save') }}</Button>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <template v-if="gradableEnrollments.length > 0">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                class="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                                @click="selectAllPass"
+                            >
+                                <CheckCircle2 class="w-4 h-4" />
+                                {{ t('admin.courseGrading.selectAllPass') }}
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                class="text-red-700 border-red-200 hover:bg-red-50 hover:text-red-800"
+                                @click="selectNone"
+                            >
+                                <XCircle class="w-4 h-4" />
+                                {{ t('admin.courseGrading.selectNone') }}
+                            </Button>
+                        </template>
+
+                        <div class="relative flex-1 max-w-xs ml-auto sm:flex-none">
+                            <Search class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                            <Input v-model="search" type="text" :placeholder="t('admin.courseGrading.searchPlaceholder')" class="pl-8 text-xs" />
+                        </div>
+
+                        <Button type="button" size="sm" @click="saveGrades">{{ t('admin.courseGrading.save') }}</Button>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-200">
-                        <table class="w-full text-left text-sm">
+                    <div v-if="filteredEnrollments.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
+                        {{ t('admin.courseGrading.noSearchResults') }}
+                    </div>
+
+                    <div v-else class="overflow-x-auto border rounded-xl border-slate-200">
+                        <table class="w-full text-xs text-left">
                             <thead class="bg-slate-100">
                                 <tr>
                                     <th class="p-3">{{ t('admin.courseGrading.colStudent') }}</th>
@@ -155,7 +186,7 @@ const statusVariant: Record<EnrollmentRow['status'], NonNullable<BadgeVariants['
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="enrollment in enrollments" :key="enrollment.id" class="border-t border-slate-200">
+                                <tr v-for="enrollment in filteredEnrollments" :key="enrollment.id" class="border-t border-slate-200">
                                     <td class="p-3">
                                         <p class="font-medium">{{ enrollment.user_name }}</p>
                                         <p class="font-mono text-xs text-muted-foreground">{{ enrollment.user_email }}</p>
@@ -181,5 +212,7 @@ const statusVariant: Record<EnrollmentRow['status'], NonNullable<BadgeVariants['
                 </template>
             </div>
         </Transition>
+        </div>
+        </div>
     </div>
 </template>

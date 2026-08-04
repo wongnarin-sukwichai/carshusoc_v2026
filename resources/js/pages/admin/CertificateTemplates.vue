@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { confirmDialog, errorToast } from '@/lib/swal';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Award, GraduationCap, ImageOff, Plus, Star, Trash2, X, Eye } from 'lucide-vue-next';
+import { Award, FileBadge, GraduationCap, ImageOff, Plus, Star, Trash2, X, Eye } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -308,8 +307,17 @@ const createTemplate = (code: string) => {
 <template>
     <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.admin.certificateTemplates')" />
-        <HeadingSmall :title="t('admin.certificateTemplates.title')" :description="t('admin.certificateTemplates.description')" />
 
+        <div class="p-5 bg-white border shadow-sm rounded-2xl border-slate-200">
+        <div class="pb-2 border-b border-slate-100">
+            <h2 class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+                <FileBadge class="w-4 h-4 text-indigo-600" />
+                {{ t('admin.certificateTemplates.title') }}
+            </h2>
+            <p class="text-[10px] text-slate-500">{{ t('admin.certificateTemplates.description') }}</p>
+        </div>
+
+        <div class="mt-4">
         <Tabs default-value="training" class="w-full">
             <TabsList>
                 <TabsTrigger v-for="center in centers" :key="center.code" :value="center.code" class="gap-1.5">
@@ -321,7 +329,7 @@ const createTemplate = (code: string) => {
             <TabsContent v-for="center in centers" :key="center.code" :value="center.code" class="space-y-4">
                 <div :class="['space-y-4 rounded-xl border p-4 shadow-sm', accentClasses[center.accent].card]">
                     <div class="flex items-center justify-between">
-                        <h3 :class="['flex items-center gap-2 text-sm font-bold', accentClasses[center.accent].heading]">
+                        <h3 :class="['flex items-center gap-2 text-xs font-bold', accentClasses[center.accent].heading]">
                             <span :class="['flex h-7 w-7 items-center justify-center rounded-full', accentClasses[center.accent].badge]">
                                 <component :is="center.icon" class="w-4 h-4" />
                             </span>
@@ -693,6 +701,8 @@ const createTemplate = (code: string) => {
                 </div>
             </TabsContent>
         </Tabs>
+        </div>
+        </div>
 
         <Dialog :open="!!previewTemplate" @update:open="(open) => !open && closePreview()">
             <DialogContent class="max-w-3xl">

@@ -4,7 +4,19 @@
       "Bash(php artisan *)",
       "Bash(php -l database/seeders/TranslationRequestSeeder.php)",
       "Bash(php artisan tinker '--execute= *)",
-      "Bash(php -l database/seeders/ExamRegistrationSeeder.php)"
+      "Bash(php -l database/seeders/ExamRegistrationSeeder.php)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost/admin/login)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost/carshusoc_v2026/public/admin/login)",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(php -l app/Http/Controllers/Admin/ExamScoreController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/TranslationRequestController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/ScoreScaleController.php)",
+      "Bash(php -l routes/admin.php)",
+      "Bash(php -l app/Http/Controllers/Admin/DashboardController.php)",
+      "Bash(php -l database/seeders/DemoContentSeeder.php)",
+      "Bash(php -l database/seeders/TestUserDemoDataSeeder.php)",
+      "Bash(php -l database/seeders/DatabaseSeeder.php)"
     ]
   }
 }
