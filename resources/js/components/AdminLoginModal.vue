@@ -31,18 +31,18 @@ const submit = () => {
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent class="text-white border-slate-700 bg-slate-900 sm:rounded-xl">
+        <DialogContent class="text-white border-slate-700 bg-gradient-to-r from-purple-400 to-purple-900 sm:rounded-xl">
             <DialogHeader>
-                <DialogTitle class="flex items-center gap-2 text-white">
+                <DialogTitle class="flex items-center gap-2 text-black">
                     <ShieldCheck class="w-5 h-5 text-amber-400" />
                     {{ t('admin.login.title') }}
                 </DialogTitle>
             </DialogHeader>
-            <p class="-mt-2 text-sm text-slate-400">{{ t('admin.login.description') }}</p>
+            <p class="-mt-2 text-sm text-slate-100">{{ t('admin.login.description') }}</p>
 
             <form @submit.prevent="submit" class="grid gap-4">
                 <div class="grid gap-2">
-                    <Label for="admin-login-modal-email" class="text-slate-200">{{ t('admin.login.email') }}</Label>
+                    <Label for="admin-login-modal-email" class="text-black">{{ t('admin.login.email') }}</Label>
                     <Input
                         id="admin-login-modal-email"
                         type="email"
@@ -51,13 +51,13 @@ const submit = () => {
                         autocomplete="email"
                         v-model="form.email"
                         placeholder="name@msu.ac.th"
-                        class="text-white border-slate-700 bg-slate-800 placeholder:text-slate-500 focus-visible:ring-amber-500"
+                        class="text-black border-slate-700 placeholder:text-slate-500 focus-visible:ring-amber-500"
                     />
                     <InputError :message="form.errors.email" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="admin-login-modal-password" class="text-slate-200">{{ t('admin.login.password') }}</Label>
+                    <Label for="admin-login-modal-password" class="text-black">{{ t('admin.login.password') }}</Label>
                     <Input
                         id="admin-login-modal-password"
                         type="password"
@@ -65,7 +65,7 @@ const submit = () => {
                         autocomplete="current-password"
                         v-model="form.password"
                         placeholder="Password"
-                        class="text-white border-slate-700 bg-slate-800 placeholder:text-slate-500 focus-visible:ring-amber-500"
+                        class="text-black border-slate-700 placeholder:text-slate-500 focus-visible:ring-amber-500"
                     />
                     <InputError :message="form.errors.password" />
                 </div>

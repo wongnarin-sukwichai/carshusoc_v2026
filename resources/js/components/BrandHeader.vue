@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import logoSrc from '../../images/logo-cars-husoc.png';
 
 const props = withDefaults(
     defineProps<{
@@ -20,14 +19,12 @@ const badgeClass = props.accent === 'blue' ? 'bg-blue-600' : 'bg-indigo-500';
 </script>
 
 <template>
-    <header class="sticky top-0 z-40 flex h-16 items-center border-b border-slate-800 bg-slate-900 px-6 text-white shadow-md">
-        <div class="flex w-full flex-wrap items-center justify-between gap-4">
+    <header class="sticky top-0 z-40 flex items-center h-16 px-6 bg-white shadow-md text-violet-700 border-slate-800">
+        <div class="flex flex-wrap items-center justify-between w-full gap-4">
             <Component :is="homeHref ? Link : 'div'" :href="homeHref" class="flex items-center gap-3">
-                <div class="flex aspect-square size-10 items-center justify-center rounded-xl bg-white p-1 shadow-inner">
-                    <img :src="logoSrc" alt="CARS-HUSOC" class="size-full object-contain" />
-                </div>
+                <img src="/images/logos.png" alt="CARS-HUSOC" class="object-contain w-auto h-10 border-r" />
                 <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 ">
                         <span class="text-lg font-extrabold tracking-tight">{{ t('app.name') }}</span>
                         <span class="rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider text-white uppercase" :class="badgeClass">
                             Portal

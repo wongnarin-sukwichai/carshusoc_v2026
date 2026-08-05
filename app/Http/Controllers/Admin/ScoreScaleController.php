@@ -18,8 +18,9 @@ class ScoreScaleController extends Controller
             ->withCount('examRegistrations')
             ->orderByDesc('effective_from')
             ->orderByDesc('version')
-            ->get()
-            ->map(fn (ScoreScale $scale) => [
+            ->paginate(5)
+            ->withQueryString()
+            ->through(fn (ScoreScale $scale) => [
                 'id' => $scale->id,
                 'name' => $scale->name,
                 'version' => $scale->version,
@@ -38,6 +39,10 @@ class ScoreScaleController extends Controller
 
         return Inertia::render('admin/ScoreScales', [
             'scales' => $scales,
+            // The "suggested next version" default in the create form needs
+            // the true max across every scale, not just whatever page of the
+            // paginated list happens to be loaded.
+            'nextVersion' => (ScoreScale::max('version') ?? 0) + 1,
         ]);
     }
 

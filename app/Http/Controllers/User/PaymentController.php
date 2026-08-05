@@ -53,6 +53,15 @@ class PaymentController extends Controller
             ->where('status', $awaitingStatus)
             ->firstOrFail();
 
+        $hasPendingPayment = Payment::where('payable_type', $payable->getMorphClass())
+            ->where('payable_id', $payable->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($hasPendingPayment) {
+            return back()->with('error', ['key' => 'flash.payment.alreadyPending']);
+        }
+
         $amount = match (true) {
             $payable instanceof CourseEnrollment => $payable->course->price,
             $payable instanceof ExamRegistration => $payable->exam->price,

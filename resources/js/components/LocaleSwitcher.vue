@@ -13,7 +13,7 @@ const targetLabel = computed(() => (locale.value === 'th' ? 'EN' : 'ไทย'))
 
 <template>
     <Button variant="ghost" size="sm" :title="$t('locale.switchTo')" @click="toggle">
-        <Languages class="h-4 w-4" />
-        <span class="text-xs font-medium">{{ targetLabel }}</span>
+        <Languages class="w-4 h-4 text-black" />
+        <span class="text-xs font-medium text-black">{{ targetLabel }}</span>
     </Button>
 </template>

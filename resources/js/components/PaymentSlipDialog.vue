@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { successToast } from '@/lib/swal';
 import { useForm } from '@inertiajs/vue3';
-import { Copy, FileText, Landmark, LoaderCircle, Receipt, Truck, Wallet } from 'lucide-vue-next';
+import { Copy, FileText, Landmark, LoaderCircle, Receipt, Truck, Wallet, ZoomIn } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -15,7 +15,7 @@ const { t } = useI18n();
 // Real bank transfer details for CARS-HUSOC — a plain account number can't
 // be turned into a scannable auto-pay (PromptPay) QR, since that requires a
 // PromptPay proxy ID (phone/citizen ID), not a bank account number. The QR
-// image at public/images/payment-qr.svg is a placeholder — swap that file
+// image at public/images/payment-qr.png is a placeholder — swap that file
 // for the bank-issued QR image (exported from the SCB Easy app) whenever
 // it's available; no code change needed since it's a static public asset.
 const BANK_ACCOUNT_NUMBER = '406-552932-8';
@@ -40,6 +40,7 @@ const emit = defineEmits<{
 }>();
 
 const open = ref(false);
+const qrExpanded = ref(false);
 
 const form = useForm({
     payable_type: props.payableType,
@@ -85,11 +86,22 @@ const submit = () => {
                         {{ t('components.paymentSlipDialog.bankTransferTitle') }}
                     </p>
                     <div class="flex items-center gap-3">
-                        <img
-                            src="/images/payment-qr.svg"
-                            :alt="t('components.paymentSlipDialog.qrAlt')"
-                            class="h-24 w-24 shrink-0 rounded-lg border border-indigo-100 bg-white object-contain p-1"
-                        />
+                        <button
+                            type="button"
+                            class="group relative h-24 w-24 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-indigo-100 bg-white p-1"
+                            @click="qrExpanded = true"
+                        >
+                            <img
+                                src="/images/payment-qr.png"
+                                :alt="t('components.paymentSlipDialog.qrAlt')"
+                                class="h-full w-full object-contain"
+                            />
+                            <span
+                                class="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
+                            >
+                                <ZoomIn class="h-5 w-5 text-white" />
+                            </span>
+                        </button>
                         <div class="min-w-0 flex-1 space-y-0.5 text-xs">
                             <p class="text-muted-foreground">{{ t('components.paymentSlipDialog.bankName') }}</p>
                             <p class="font-medium text-indigo-950">{{ t('components.paymentSlipDialog.bankNameValue') }}</p>
@@ -156,6 +168,15 @@ const submit = () => {
                     </Button>
                 </DialogFooter>
             </form>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog v-model:open="qrExpanded">
+        <DialogContent class="max-w-sm">
+            <DialogHeader>
+                <DialogTitle>{{ t('components.paymentSlipDialog.bankTransferTitle') }}</DialogTitle>
+            </DialogHeader>
+            <img src="/images/payment-qr.png" :alt="t('components.paymentSlipDialog.qrAlt')" class="h-auto w-full rounded-lg" />
         </DialogContent>
     </Dialog>
 </template>

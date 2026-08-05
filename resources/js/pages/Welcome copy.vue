@@ -92,10 +92,7 @@ const showExamRules = ref(false);
     <Head :title="t('welcome.title')" />
 
     <Transition name="fade" mode="out-in">
-    <div
-        :key="locale"
-        class="flex min-h-screen flex-col bg-white bg-[url('/images/bg.png')] bg-cover bg-center bg-no-repeat bg-fixed text-slate-800 dark:bg-[#0a0a0a] dark:text-[#EDEDEC] "
-    >
+    <div :key="locale" class="flex min-h-screen flex-col bg-white text-slate-800 dark:bg-[#0a0a0a] dark:text-[#EDEDEC]">
         <BrandHeader accent="blue">
             <LocaleSwitcher class="text-white hover:text-white" />
             <Link
@@ -138,7 +135,7 @@ const showExamRules = ref(false);
                         </nav>
                     </div>
 
-                    <div class="p-4 mt-auto border-t border-slate-100">
+                    <div class="p-4 mt-auto border-t border-slate-100 bg-slate-50">
                         <div class="flex items-center gap-3">
                             <div class="flex items-center justify-center border rounded-full h-9 w-9 border-slate-300 bg-slate-200 text-slate-500">
                                 <Lock class="w-4 h-4" />
@@ -154,13 +151,12 @@ const showExamRules = ref(false);
                     </div>
                 </div>
             </aside>
-
-            <main class="flex flex-col gap-4 lg:col-span-8">
-              <img src="/images/banner.png" alt="" class="w-full h-auto rounded-2xl" />
+            
+            <main class="flex flex-col gap-6 lg:col-span-8">
               <Transition name="fade" mode="out-in">
                 <!-- Training tab -->
-                <div v-if="activeTab === 'training'" key="training" class="flex flex-col gap-4">
-                    <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900">
+                <div v-if="activeTab === 'training'" key="training" class="flex flex-col gap-6">
+                    <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-br from-indigo-900 to-slate-900">
                         <BookOpen class="absolute bottom-0 right-0 w-48 h-48 translate-x-12 translate-y-6 opacity-10" />
                         <div class="relative z-10 max-w-2xl">
                             <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
@@ -187,7 +183,7 @@ const showExamRules = ref(false);
                         <div
                             v-for="course in courses"
                             :key="course.id"
-                            class="flex flex-col justify-between p-4 bg-white border border-blue-100 shadow-xl rounded-xl"
+                            class="flex flex-col justify-between p-4 border border-blue-500 shadow-sm rounded-xl"
                         >
                             <div class="flex flex-col flex-1">
                                 <div class="flex items-center justify-between mb-2 text-xs">
@@ -257,8 +253,8 @@ const showExamRules = ref(false);
                 </div>
 
                 <!-- Exam tab -->
-                <div v-else-if="activeTab === 'exam'" key="exam" class="flex flex-col gap-4">
-                    <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900">
+                <div v-else-if="activeTab === 'exam'" key="exam" class="flex flex-col gap-6">
+                    <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950">
                         <GraduationCap class="absolute bottom-0 right-0 w-48 h-48 translate-x-12 translate-y-6 opacity-10" />
                         <div class="relative z-10 max-w-2xl">
                             <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
@@ -292,8 +288,8 @@ const showExamRules = ref(false);
                     </p>
 
                     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div v-for="exam in exams" :key="exam.id" class="flex flex-col justify-between p-4 bg-white border shadow-xl border-violet-200 rounded-xl">
-                            <div class="flex flex-col flex-1 ">
+                        <div v-for="exam in exams" :key="exam.id" class="flex flex-col justify-between p-4 border shadow-sm border-violet-600 rounded-xl">
+                            <div class="flex flex-col flex-1">
                                 <div class="flex items-center justify-between mb-2 text-xs">
                                     <span class="rounded-lg bg-violet-100 px-2 py-0.5 font-bold text-violet-700">{{ exam.type }}</span>
                                 </div>

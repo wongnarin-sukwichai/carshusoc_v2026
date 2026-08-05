@@ -55,11 +55,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('exam-scores', [ExamScoreController::class, 'index'])->name('exam-scores');
         Route::put('exam-registrations/{registration}', [ExamScoreController::class, 'updateScore'])->name('exam-registrations.update');
         Route::get('exams/{exam}/score-template', [ExamScoreController::class, 'scoreTemplate'])->name('exams.score-template');
+        Route::get('exams/{exam}/export-registrants', [ExamScoreController::class, 'exportRegistrants'])->name('exams.export-registrants');
         Route::post('exams/{exam}/import-scores/validate', [ExamScoreController::class, 'validateImport'])->name('exams.import-scores.validate');
         Route::post('exams/{exam}/import-scores', [ExamScoreController::class, 'import'])->name('exams.import-scores');
 
         Route::get('course-grading', [CourseGradingController::class, 'index'])->name('course-grading');
         Route::post('course-grading/save', [CourseGradingController::class, 'gradeBulk'])->name('course-grading.save');
+        Route::get('courses/{course}/export-roster', [CourseGradingController::class, 'exportRoster'])->name('courses.export-roster');
 
         Route::get('score-scales', [ScoreScaleController::class, 'index'])->name('score-scales');
         Route::post('score-scales', [ScoreScaleController::class, 'store'])->name('score-scales.store');

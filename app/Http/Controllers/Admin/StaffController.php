@@ -16,7 +16,7 @@ class StaffController extends Controller
     public function index(): Response
     {
         return Inertia::render('admin/Staff', [
-            'admins' => Admin::orderBy('name')->get(['id', 'name', 'email', 'role']),
+            'admins' => Admin::orderBy('name')->paginate(10, ['id', 'name', 'email', 'role']),
         ]);
     }
 

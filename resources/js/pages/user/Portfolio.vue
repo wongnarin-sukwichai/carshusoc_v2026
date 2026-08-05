@@ -28,7 +28,8 @@ const examCerts = () => props.certificates.filter((c) => c.kind === 'exam');
 <template>
     <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
         <Head :title="t('nav.user.portfolio')" />
-            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 to-indigo-950 p-6 text-white">
+            <img src="/images/banner.png" alt="" class="w-full h-auto rounded-2xl" />
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900 p-6 text-white">
                 <ShieldCheck class="absolute right-0 bottom-0 h-48 w-48 translate-x-12 translate-y-6 opacity-10" />
                 <div class="relative z-10 max-w-2xl">
                     <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
@@ -51,7 +52,7 @@ const examCerts = () => props.certificates.filter((c) => c.kind === 'exam');
                         <div
                             v-for="cert in courseCerts()"
                             :key="cert.id"
-                            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+                            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"
                         >
                             <div class="flex min-w-0 items-center gap-3">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
@@ -86,7 +87,7 @@ const examCerts = () => props.certificates.filter((c) => c.kind === 'exam');
                         <div
                             v-for="cert in examCerts()"
                             :key="cert.id"
-                            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm"
+                            class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"
                         >
                             <div class="flex min-w-0 items-center gap-3">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600">

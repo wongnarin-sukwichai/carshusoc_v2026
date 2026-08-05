@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Pagination from '@/components/Pagination.vue';
 import { Badge, type BadgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -6,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { confirmDialog } from '@/lib/swal';
+import { type Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Lock, Plus, Power, Ruler, Trash2, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({ layout: AdminLayout });
@@ -33,7 +35,8 @@ interface ScoreScaleRow {
 }
 
 const props = defineProps<{
-    scales: ScoreScaleRow[];
+    scales: Paginated<ScoreScaleRow>;
+    nextVersion: number;
 }>();
 
 const { t } = useI18n();
@@ -57,13 +60,11 @@ const removeBandRow = (bands: BandRow[], index: number) => {
     bands.splice(index, 1);
 };
 
-const nextVersion = Math.max(0, ...props.scales.map((s) => s.version)) + 1;
-
 const showNewForm = ref(false);
 
 const newForm = useForm({
     name: '',
-    version: nextVersion,
+    version: props.nextVersion,
     effective_from: new Date().toISOString().slice(0, 10),
     is_active: true,
     bands: defaultBands(),
@@ -86,19 +87,30 @@ const toggleExpand = (id: number) => {
     expandedId.value = expandedId.value === id ? null : id;
 };
 
-const expandedScale = () => props.scales.find((s) => s.id === expandedId.value) ?? null;
+const expandedScale = () => props.scales.data.find((s) => s.id === expandedId.value) ?? null;
 
-const editForms = Object.fromEntries(
-    props.scales.map((scale) => [
-        scale.id,
-        useForm({
-            name: scale.name,
-            version: scale.version,
-            effective_from: scale.effective_from,
-            is_active: scale.is_active,
-            bands: scale.bands.map((band) => ({ ...band })),
-        }),
-    ]),
+// A plain Object.fromEntries built once at setup wouldn't pick up rows from
+// pages fetched after the initial load — Inertia keeps this component
+// mounted across same-page navigations (only props change), so switching
+// pages needs a form created for those newly-arrived rows too.
+const editForms: Record<number, ReturnType<typeof useForm<Record<string, unknown>>>> = reactive({});
+
+watch(
+    () => props.scales.data,
+    (rows) => {
+        rows.forEach((scale) => {
+            if (scale.id in editForms) return;
+
+            editForms[scale.id] = useForm({
+                name: scale.name,
+                version: scale.version,
+                effective_from: scale.effective_from,
+                is_active: scale.is_active,
+                bands: scale.bands.map((band) => ({ ...band })),
+            });
+        });
+    },
+    { immediate: true },
 );
 
 const saveScale = (id: number) => {
@@ -231,7 +243,7 @@ const statusVariant = (isActive: boolean): NonNullable<BadgeVariants['variant']>
                     </form>
                 </Transition>
 
-                <p v-if="scales.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
+                <p v-if="scales.data.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                     {{ t('admin.scoreScales.empty') }}
                 </p>
 
@@ -249,7 +261,7 @@ const statusVariant = (isActive: boolean): NonNullable<BadgeVariants['variant']>
                         </thead>
                         <tbody>
                             <tr
-                                v-for="scale in scales"
+                                v-for="scale in scales.data"
                                 :key="scale.id"
                                 class="border-t cursor-pointer border-slate-200 hover:bg-slate-50"
                                 @click="toggleExpand(scale.id)"
@@ -295,7 +307,13 @@ const statusVariant = (isActive: boolean): NonNullable<BadgeVariants['variant']>
                         </tbody>
                     </table>
                 </div>
-                <p v-if="scales.length > 0" class="text-[10px] text-muted-foreground">{{ t('admin.scoreScales.tableHint') }}</p>
+                <p v-if="scales.data.length > 0" class="text-[10px] text-muted-foreground">{{ t('admin.scoreScales.tableHint') }}</p>
+                <Pagination
+                    :current-page="scales.current_page"
+                    :last-page="scales.last_page"
+                    :prev-page-url="scales.prev_page_url"
+                    :next-page-url="scales.next_page_url"
+                />
 
                 <Transition name="fade">
                     <div

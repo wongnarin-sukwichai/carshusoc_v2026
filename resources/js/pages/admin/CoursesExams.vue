@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -6,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { formatDate } from '@/lib/date';
+import { type Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { BookOpen, CalendarClock, CalendarRange, ClipboardList, Eye, EyeOff, Plus, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({ layout: AdminLayout });
@@ -23,6 +25,12 @@ interface ScoreScaleOption {
     id: number;
     name: string;
     version: number;
+}
+
+interface CourseOption {
+    id: number;
+    code: string;
+    name_th: string;
 }
 
 interface CourseRow {
@@ -65,8 +73,9 @@ interface ExamRow {
 }
 
 const props = defineProps<{
-    courses: CourseRow[];
-    exams: ExamRow[];
+    courses: Paginated<CourseRow>;
+    exams: Paginated<ExamRow>;
+    allCourses: CourseOption[];
     certificateTemplates: CertificateTemplateOption[];
     scoreScales: ScoreScaleOption[];
 }>();
@@ -115,29 +124,40 @@ const toggleExpandCourse = (id: number) => {
     expandedCourseId.value = expandedCourseId.value === id ? null : id;
 };
 
-const expandedCourse = () => props.courses.find((course) => course.id === expandedCourseId.value) ?? null;
+const expandedCourse = () => props.courses.data.find((course) => course.id === expandedCourseId.value) ?? null;
 
-const courseEditForms = Object.fromEntries(
-    props.courses.map((course) => [
-        course.id,
-        useForm({
-            code: course.code,
-            name_th: course.name_th,
-            name_en: course.name_en,
-            language: course.language,
-            level: course.level,
-            price: Number(course.price),
-            prerequisite_course_id: course.prerequisite_course_id,
-            location: course.location ?? '',
-            start_date: course.start_date ?? '',
-            end_date: course.end_date ?? '',
-            registration_open_at: course.registration_open_at ?? '',
-            registration_close_at: course.registration_close_at ?? '',
-            requires_receipt: course.requires_receipt,
-            is_visible: course.is_visible,
-            certificate_template_id: course.certificate_template_id,
-        }),
-    ]),
+// A plain Object.fromEntries built once at setup wouldn't pick up rows from
+// pages fetched after the initial load — Inertia keeps this component
+// mounted across same-page navigations (only props change), so switching to
+// page 2 needs a form created for those newly-arrived rows too.
+const courseEditForms: Record<number, ReturnType<typeof useForm<Record<string, unknown>>>> = reactive({});
+
+watch(
+    () => props.courses.data,
+    (rows) => {
+        rows.forEach((course) => {
+            if (course.id in courseEditForms) return;
+
+            courseEditForms[course.id] = useForm({
+                code: course.code,
+                name_th: course.name_th,
+                name_en: course.name_en,
+                language: course.language,
+                level: course.level,
+                price: Number(course.price),
+                prerequisite_course_id: course.prerequisite_course_id,
+                location: course.location ?? '',
+                start_date: course.start_date ?? '',
+                end_date: course.end_date ?? '',
+                registration_open_at: course.registration_open_at ?? '',
+                registration_close_at: course.registration_close_at ?? '',
+                requires_receipt: course.requires_receipt,
+                is_visible: course.is_visible,
+                certificate_template_id: course.certificate_template_id,
+            });
+        });
+    },
+    { immediate: true },
 );
 
 const saveCourse = (courseId: number) => {
@@ -187,29 +207,37 @@ const toggleExpandExam = (id: number) => {
     expandedExamId.value = expandedExamId.value === id ? null : id;
 };
 
-const expandedExam = () => props.exams.find((exam) => exam.id === expandedExamId.value) ?? null;
+const expandedExam = () => props.exams.data.find((exam) => exam.id === expandedExamId.value) ?? null;
 
-const examEditForms = Object.fromEntries(
-    props.exams.map((exam) => [
-        exam.id,
-        useForm({
-            code: exam.code,
-            type: exam.type,
-            name_th: exam.name_th,
-            name_en: exam.name_en,
-            price: Number(exam.price),
-            exam_date: exam.exam_date,
-            registration_open_at: exam.registration_open_at ?? '',
-            registration_close_at: exam.registration_close_at ?? '',
-            location: exam.location ?? '',
-            requires_receipt: exam.requires_receipt,
-            mail_delivery_available: exam.mail_delivery_available,
-            mail_delivery_fee: exam.mail_delivery_fee ? Number(exam.mail_delivery_fee) : null,
-            is_visible: exam.is_visible,
-            certificate_template_id: exam.certificate_template_id,
-            score_scale_id: exam.score_scale_id,
-        }),
-    ]),
+// See the matching comment on courseEditForms above — same reasoning.
+const examEditForms: Record<number, ReturnType<typeof useForm<Record<string, unknown>>>> = reactive({});
+
+watch(
+    () => props.exams.data,
+    (rows) => {
+        rows.forEach((exam) => {
+            if (exam.id in examEditForms) return;
+
+            examEditForms[exam.id] = useForm({
+                code: exam.code,
+                type: exam.type,
+                name_th: exam.name_th,
+                name_en: exam.name_en,
+                price: Number(exam.price),
+                exam_date: exam.exam_date,
+                registration_open_at: exam.registration_open_at ?? '',
+                registration_close_at: exam.registration_close_at ?? '',
+                location: exam.location ?? '',
+                requires_receipt: exam.requires_receipt,
+                mail_delivery_available: exam.mail_delivery_available,
+                mail_delivery_fee: exam.mail_delivery_fee ? Number(exam.mail_delivery_fee) : null,
+                is_visible: exam.is_visible,
+                certificate_template_id: exam.certificate_template_id,
+                score_scale_id: exam.score_scale_id,
+            });
+        });
+    },
+    { immediate: true },
 );
 
 const saveExam = (examId: number) => {
@@ -305,7 +333,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
                             <Label for="new-course-prerequisite">{{ t('admin.coursesExams.fieldPrerequisite') }}</Label>
                             <select id="new-course-prerequisite" v-model="newCourseForm.prerequisite_course_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                 <option :value="null">{{ t('admin.coursesExams.prerequisiteNone') }}</option>
-                                <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.code }}: {{ course.name_th }}</option>
+                                <option v-for="course in allCourses" :key="course.id" :value="course.id">{{ course.code }}: {{ course.name_th }}</option>
                             </select>
                         </div>
 
@@ -392,11 +420,11 @@ const toggleExamVisibility = (exam: ExamRow) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="courses.length === 0">
+                            <tr v-if="courses.data.length === 0">
                                 <td colspan="3" class="p-4 text-center text-muted-foreground">{{ t('admin.coursesExams.emptyCourses') }}</td>
                             </tr>
                             <tr
-                                v-for="course in courses"
+                                v-for="course in courses.data"
                                 :key="course.id"
                                 class="border-t cursor-pointer border-slate-200 hover:bg-slate-50"
                                 @click="toggleExpandCourse(course.id)"
@@ -420,7 +448,13 @@ const toggleExamVisibility = (exam: ExamRow) => {
                         </tbody>
                     </table>
                 </div>
-                <p v-if="courses.length > 0" class="text-[10px] text-muted-foreground">{{ t('admin.coursesExams.tableHint') }}</p>
+                <p v-if="courses.data.length > 0" class="text-[10px] text-muted-foreground">{{ t('admin.coursesExams.tableHint') }}</p>
+                <Pagination
+                    :current-page="courses.current_page"
+                    :last-page="courses.last_page"
+                    :prev-page-url="courses.prev_page_url"
+                    :next-page-url="courses.next_page_url"
+                />
 
                 <!-- Edit card -->
                 <Transition name="fade">
@@ -480,7 +514,7 @@ const toggleExamVisibility = (exam: ExamRow) => {
                                     <Label :for="`course-prerequisite-${editing.id}`">{{ t('admin.coursesExams.fieldPrerequisite') }}</Label>
                                     <select :id="`course-prerequisite-${editing.id}`" v-model="courseEditForms[editing.id].prerequisite_course_id" class="h-10 rounded-md border bg-background px-3 text-sm">
                                         <option :value="null">{{ t('admin.coursesExams.prerequisiteNone') }}</option>
-                                        <option v-for="course in courses.filter((c) => c.id !== editing.id)" :key="course.id" :value="course.id">
+                                        <option v-for="course in allCourses.filter((c) => c.id !== editing.id)" :key="course.id" :value="course.id">
                                             {{ course.code }}: {{ course.name_th }}
                                         </option>
                                     </select>
@@ -707,11 +741,11 @@ const toggleExamVisibility = (exam: ExamRow) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="exams.length === 0">
+                            <tr v-if="exams.data.length === 0">
                                 <td colspan="3" class="p-4 text-center text-muted-foreground">{{ t('admin.coursesExams.emptyExams') }}</td>
                             </tr>
                             <tr
-                                v-for="exam in exams"
+                                v-for="exam in exams.data"
                                 :key="exam.id"
                                 class="border-t cursor-pointer border-slate-200 hover:bg-slate-50"
                                 @click="toggleExpandExam(exam.id)"
@@ -735,7 +769,13 @@ const toggleExamVisibility = (exam: ExamRow) => {
                         </tbody>
                     </table>
                 </div>
-                <p v-if="exams.length > 0" class="text-[10px] text-muted-foreground">{{ t('admin.coursesExams.tableHint') }}</p>
+                <p v-if="exams.data.length > 0" class="text-[10px] text-muted-foreground">{{ t('admin.coursesExams.tableHint') }}</p>
+                <Pagination
+                    :current-page="exams.current_page"
+                    :last-page="exams.last_page"
+                    :prev-page-url="exams.prev_page_url"
+                    :next-page-url="exams.next_page_url"
+                />
 
                 <!-- Edit card -->
                 <Transition name="fade">

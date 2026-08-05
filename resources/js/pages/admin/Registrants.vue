@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { confirmDialog } from '@/lib/swal';
+import { type Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Search, UserRoundCog, Users } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({ layout: AdminLayout });
@@ -23,19 +25,18 @@ interface UserRow {
 }
 
 const props = defineProps<{
-    users: UserRow[];
+    users: Paginated<UserRow>;
+    search: string | null;
 }>();
 
-const search = ref('');
+const search = ref(props.search ?? '');
+let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 
-const filteredUsers = computed(() => {
-    const query = search.value.trim().toLowerCase();
-
-    if (!query) return props.users;
-
-    return props.users.filter(
-        (user) => user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query),
-    );
+watch(search, (value) => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        router.get(route('admin.registrants'), { search: value || undefined }, { preserveState: true, preserveScroll: true, replace: true });
+    }, 350);
 });
 
 const form = useForm({
@@ -129,10 +130,10 @@ const impersonate = async (user: UserRow) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-if="filteredUsers.length === 0">
+                                <tr v-if="users.data.length === 0">
                                     <td colspan="6" class="p-4 text-center text-muted-foreground">{{ t('admin.registrants.empty') }}</td>
                                 </tr>
-                                <tr v-for="user in filteredUsers" :key="user.id" class="border-t border-slate-200 hover:bg-slate-50">
+                                <tr v-for="user in users.data" :key="user.id" class="border-t border-slate-200 hover:bg-slate-50">
                                     <td class="p-2.5 font-semibold whitespace-nowrap">{{ user.name }}</td>
                                     <td class="p-2.5 font-mono text-slate-500">{{ user.email }}</td>
                                     <td class="p-2.5 whitespace-nowrap">{{ user.phone ?? '—' }}</td>
@@ -156,6 +157,13 @@ const impersonate = async (user: UserRow) => {
                             </tbody>
                         </table>
                     </div>
+
+                    <Pagination
+                        :current-page="users.current_page"
+                        :last-page="users.last_page"
+                        :prev-page-url="users.prev_page_url"
+                        :next-page-url="users.next_page_url"
+                    />
                 </div>
             </div>
         </div>

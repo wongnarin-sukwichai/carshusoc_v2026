@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user/UserLayout.vue';
 import { formatDate } from '@/lib/date';
 import { Head, router } from '@inertiajs/vue3';
-import { Award, Calendar, CalendarClock, FileCheck2, GraduationCap, MapPin, ShieldAlert } from 'lucide-vue-next';
+import { Award, Calendar, CalendarClock, Clock, FileCheck2, GraduationCap, MapPin, ShieldAlert } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -39,7 +39,12 @@ interface Registration {
 const props = defineProps<{
     exams: Exam[];
     registrations: Record<number, Registration>;
+    pendingPaymentIds: number[];
+    rejectionReasons: Record<number, string>;
 }>();
+
+const hasPendingPayment = (registration: Registration | undefined) => !!registration && props.pendingPaymentIds.includes(registration.id);
+const rejectionReasonFor = (registration: Registration | undefined) => (registration ? props.rejectionReasons[registration.id] : undefined);
 
 const { t, locale } = useI18n();
 
@@ -56,7 +61,8 @@ const showExamRules = ref(false);
 <template>
     <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.user.exam')" />
-            <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950">
+            <img src="/images/banner.png" alt="" class="w-full h-auto rounded-2xl" />
+            <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900">
                 <GraduationCap class="absolute bottom-0 right-0 w-48 h-48 translate-x-12 translate-y-6 opacity-10" />
                 <div class="relative z-10 max-w-2xl">
                     <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
@@ -64,7 +70,7 @@ const showExamRules = ref(false);
                     </span>
                     <h2 class="mt-2 text-xl font-extrabold">{{ t('nav.user.exam') }}</h2>
                     <p class="mt-1 text-xs leading-relaxed text-slate-300">{{ t('user.exam.description') }}</p>
-                    <div class="mt-3 flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-2 mt-3">
                         <button
                             type="button"
                             class="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20"
@@ -90,7 +96,7 @@ const showExamRules = ref(false);
             </p>
 
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div v-for="exam in exams" :key="exam.id" class="flex flex-col justify-between p-4 border shadow-sm border-violet-600 rounded-xl">
+                <div v-for="exam in exams" :key="exam.id" class="flex flex-col justify-between p-4 bg-white border shadow-xl border-violet-200 rounded-xl">
                     <div class="flex flex-col flex-1">
                         <div class="flex items-center justify-between mb-2 text-xs">
                             <span class="rounded-lg bg-violet-100 px-2 py-0.5 font-bold text-violet-700">{{ exam.type }}</span>
@@ -128,8 +134,16 @@ const showExamRules = ref(false);
                             </div>
 
                             <div>
+                                <Badge
+                                    v-if="registrations[exam.id]?.status === 'pending_payment' && hasPendingPayment(registrations[exam.id])"
+                                    variant="warning"
+                                    class="gap-1"
+                                >
+                                    <Clock class="w-3 h-3" />
+                                    {{ t('user.exam.statusAwaitingReview') }}
+                                </Badge>
                                 <PaymentSlipDialog
-                                    v-if="registrations[exam.id]?.status === 'pending_payment'"
+                                    v-else-if="registrations[exam.id]?.status === 'pending_payment'"
                                     payable-type="exam_registration"
                                     :payable-id="registrations[exam.id].id"
                                     :title="examName(exam)"
@@ -159,6 +173,13 @@ const showExamRules = ref(false);
                                 >
                                 <Button v-else size="sm" @click="register(exam)">{{ t('user.exam.register') }}</Button>
                             </div>
+                        </div>
+                        <div
+                            v-if="rejectionReasonFor(registrations[exam.id])"
+                            class="mt-2 rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] text-red-700"
+                        >
+                            <span class="font-bold">{{ t('user.exam.previousSlipRejectedPrefix') }}</span>
+                            {{ rejectionReasonFor(registrations[exam.id]) }}
                         </div>
                     </div>
                 </div>

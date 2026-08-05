@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
+import { confirmDialog } from '@/lib/swal';
 import { Head, router } from '@inertiajs/vue3';
-import { CheckCircle2, GraduationCap, Search, XCircle } from 'lucide-vue-next';
+import { CheckCircle2, FileSpreadsheet, GraduationCap, Search, XCircle } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -36,6 +37,21 @@ const { t } = useI18n();
 const changeCourse = (event: Event) => {
     const courseId = (event.target as HTMLSelectElement).value;
     router.get(route('admin.course-grading'), { course: courseId }, { preserveState: true });
+};
+
+const exportRoster = async () => {
+    if (!props.selectedCourseId) return;
+
+    const confirmed = await confirmDialog({
+        title: t('common.areYouSure'),
+        text: t('admin.courseGrading.exportConfirmText'),
+        icon: 'question',
+        confirmButtonText: t('admin.courseGrading.export'),
+    });
+
+    if (!confirmed) return;
+
+    window.location.href = route('admin.courses.export-roster', props.selectedCourseId);
 };
 
 // Pass/fail is editable indefinitely, not just while "studying" — only rows
@@ -168,6 +184,17 @@ const statusVariant: Record<EnrollmentRow['status'], NonNullable<BadgeVariants['
                             <Search class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                             <Input v-model="search" type="text" :placeholder="t('admin.courseGrading.searchPlaceholder')" class="pl-8 text-xs" />
                         </div>
+
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            class="border-[#217346] text-[#217346] hover:bg-[#217346]/10 hover:text-[#217346]"
+                            @click="exportRoster"
+                        >
+                            <FileSpreadsheet class="w-4 h-4" />
+                            {{ t('admin.courseGrading.export') }}
+                        </Button>
 
                         <Button type="button" size="sm" @click="saveGrades">{{ t('admin.courseGrading.save') }}</Button>
                     </div>

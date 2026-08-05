@@ -99,6 +99,45 @@ class ExamScoreController extends Controller
         return response()->download($tempPath, "exam-scores-template-{$exam->code}.xlsx")->deleteFileAfterSend(true);
     }
 
+    /**
+     * Same columns as scoreTemplate() so the file can be filled in and
+     * re-imported as-is — but with every currently-registered examinee's
+     * email pre-filled (instead of one made-up sample row), since the point
+     * here is a ready-to-fill roster for this specific exam round, not a
+     * blank format example.
+     */
+    public function exportRegistrants(Exam $exam): BinaryFileResponse
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->fromArray(
+            ['email', 'room', 'seat_number', 'listening', 'reading', 'conversation', 'grammar'],
+            null,
+            'A1'
+        );
+
+        $rows = ExamRegistration::with('user')
+            ->where('exam_id', $exam->id)
+            ->latest()
+            ->get()
+            ->map(fn (ExamRegistration $registration) => [$registration->user->email, '', '', '', '', '', ''])
+            ->all();
+
+        if ($rows !== []) {
+            $sheet->fromArray($rows, null, 'A2');
+        }
+
+        foreach (range('A', 'G') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'exam-registrants').'.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+
+        return response()->download($tempPath, "exam-registrants-{$exam->code}.xlsx")->deleteFileAfterSend(true);
+    }
+
     public function validateImport(Request $request, Exam $exam): RedirectResponse
     {
         $request->validate([

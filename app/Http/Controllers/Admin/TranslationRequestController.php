@@ -14,12 +14,24 @@ use Inertia\Response;
 
 class TranslationRequestController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $status = $request->query('status', 'all');
+
+        $statusCounts = [
+            'all' => TranslationRequest::count(),
+            'submitted' => TranslationRequest::where('status', 'submitted')->count(),
+            'quote_sent' => TranslationRequest::where('status', 'quote_sent')->count(),
+            'translating' => TranslationRequest::where('status', 'translating')->count(),
+            'completed' => TranslationRequest::where('status', 'completed')->count(),
+        ];
+
         $requests = TranslationRequest::with(['user', 'payments'])
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
             ->latest()
-            ->get()
-            ->map(fn (TranslationRequest $r) => [
+            ->paginate(5)
+            ->withQueryString()
+            ->through(fn (TranslationRequest $r) => [
                 'id' => $r->id,
                 'user_name' => $r->user->name,
                 'user_email' => $r->user->email,
@@ -35,6 +47,8 @@ class TranslationRequestController extends Controller
 
         return Inertia::render('admin/TranslationQuotes', [
             'requests' => $requests,
+            'statusCounts' => $statusCounts,
+            'activeStatus' => $status,
         ]);
     }
 

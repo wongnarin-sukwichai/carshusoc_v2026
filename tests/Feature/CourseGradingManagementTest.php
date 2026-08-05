@@ -7,6 +7,7 @@ use App\Models\CertificateTemplate;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class CourseGradingManagementTest extends TestCase
@@ -36,6 +37,28 @@ class CourseGradingManagementTest extends TestCase
                 ->where('enrollments.0.id', $enrollment->id)
                 ->where('enrollments.0.status', 'studying')
         );
+    }
+
+    public function test_admin_can_export_the_course_roster_with_real_names_emails_and_status()
+    {
+        $admin = Admin::factory()->create();
+        $course = Course::factory()->create();
+        $enrollment = CourseEnrollment::factory()->create(['course_id' => $course->id, 'status' => 'studying']);
+        $enrollment->loadMissing('user');
+
+        $response = $this->actingAs($admin, 'admin')->get(route('admin.courses.export-roster', $course));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $sheet = IOFactory::load($response->baseResponse->getFile()->getPathname())->getActiveSheet();
+
+        $this->assertSame('name', $sheet->getCell('A1')->getValue());
+        $this->assertSame('email', $sheet->getCell('B1')->getValue());
+        $this->assertSame('status', $sheet->getCell('C1')->getValue());
+        $this->assertSame($enrollment->user->name, $sheet->getCell('A2')->getValue());
+        $this->assertSame($enrollment->user->email, $sheet->getCell('B2')->getValue());
+        $this->assertSame('กำลังเรียน', $sheet->getCell('C2')->getValue());
     }
 
     public function test_bulk_grade_marks_selected_enrollments_passed_and_others_failed()

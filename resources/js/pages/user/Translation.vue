@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import FileDropzone from '@/components/FileDropzone.vue';
+import Pagination from '@/components/Pagination.vue';
 import PaymentSlipDialog from '@/components/PaymentSlipDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import UserLayout from '@/layouts/user/UserLayout.vue';
+import { type Paginated } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ArrowRight, Download, FileText, Languages, LoaderCircle, Upload } from 'lucide-vue-next';
+import { ArrowRight, Clock, Download, FileText, Languages, LoaderCircle, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -22,9 +24,14 @@ interface TranslationRequestRow {
     delivery_date: string | null;
 }
 
-defineProps<{
-    requests: TranslationRequestRow[];
+const props = defineProps<{
+    requests: Paginated<TranslationRequestRow>;
+    pendingPaymentIds: number[];
+    rejectionReasons: Record<number, string>;
 }>();
+
+const hasPendingPayment = (req: TranslationRequestRow) => props.pendingPaymentIds.includes(req.id);
+const rejectionReasonFor = (req: TranslationRequestRow) => props.rejectionReasons[req.id];
 
 const { t } = useI18n();
 
@@ -70,7 +77,8 @@ const cardBorderClass: Record<TranslationRequestRow['status'], string> = {
 <template>
     <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.user.translation')" />
-            <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-br from-indigo-950 to-slate-900">
+            <img src="/images/banner.png" alt="" class="w-full h-auto rounded-2xl" />
+            <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900">
                 <FileText class="absolute bottom-0 right-0 w-48 h-48 translate-x-12 translate-y-6 opacity-10" />
                 <div class="relative z-10 max-w-2xl">
                     <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
@@ -141,48 +149,71 @@ const cardBorderClass: Record<TranslationRequestRow['status'], string> = {
                 <div class="p-4 border shadow-sm rounded-xl border-slate-200 lg:col-span-2">
                     <h3 class="mb-3 text-sm font-bold">{{ t('user.translation.historyTitle') }}</h3>
 
-                    <p v-if="requests.length === 0" class="py-8 text-sm text-center text-muted-foreground">{{ t('user.translation.empty') }}</p>
+                    <p v-if="requests.data.length === 0" class="py-8 text-sm text-center text-muted-foreground">{{ t('user.translation.empty') }}</p>
 
                     <div v-else class="space-y-2">
                         <div
-                            v-for="req in requests"
+                            v-for="req in requests.data"
                             :key="req.id"
-                            :class="['flex items-center justify-between rounded-xl border bg-slate-50 p-3 text-sm', cardBorderClass[req.status]]"
+                            :class="['rounded-xl border bg-white p-3 text-sm', cardBorderClass[req.status]]"
                         >
-                            <div>
-                                <p class="font-medium">{{ req.file_name }}</p>
-                                <p class="text-xs text-muted-foreground">
-                                    {{ t('user.translation.langPair', { source: req.source_lang, target: req.target_lang }) }}
-                                </p>
-                                <Badge :variant="statusVariant[req.status]" :class="req.status === 'translating' ? 'animate-pulse' : ''" class="mt-2">{{
-                                    statusLabel[req.status]
-                                }}</Badge>
-                            </div>
-                            <div class="mt-1 text-right">
-                                <p v-if="req.estimated_price" class="mb-1 text-xs text-muted-foreground">
-                                    {{ t('user.translation.estimatedPrice', { price: Number(req.estimated_price).toLocaleString() }) }}
-                                </p>
-                                <PaymentSlipDialog
-                                    v-if="req.status === 'quote_sent'"
-                                    payable-type="translation_request"
-                                    :payable-id="req.id"
-                                    :title="req.file_name"
-                                    :amount="Number(req.estimated_price)"
-                                    :trigger-label="t('user.translation.uploadSlip')"
-                                />
-                                <Button
-                                    v-else-if="req.status === 'completed'"
-                                    as-child
-                                    size="sm"
-                                    class="border-transparent bg-[#217346] text-white hover:bg-[#1a5c38] hover:text-white"
-                                >
-                                    <a :href="route('user.translations.download', req.id)"
-                                        ><Download class="w-3 h-3 mr-1" />{{ t('user.translation.downloadResult') }}</a
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">{{ req.file_name }}</p>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ t('user.translation.langPair', { source: req.source_lang, target: req.target_lang }) }}
+                                    </p>
+                                    <Badge
+                                        :variant="statusVariant[req.status]"
+                                        :class="req.status === 'translating' ? 'animate-pulse' : ''"
+                                        class="mt-2"
+                                        >{{ statusLabel[req.status] }}</Badge
                                     >
-                                </Button>
+                                </div>
+                                <div class="mt-1 text-right">
+                                    <p v-if="req.estimated_price" class="mb-1 text-xs text-muted-foreground">
+                                        {{ t('user.translation.estimatedPrice', { price: Number(req.estimated_price).toLocaleString() }) }}
+                                    </p>
+                                    <Badge v-if="req.status === 'quote_sent' && hasPendingPayment(req)" variant="warning" class="gap-1">
+                                        <Clock class="w-3 h-3" />
+                                        {{ t('user.translation.statusAwaitingReview') }}
+                                    </Badge>
+                                    <PaymentSlipDialog
+                                        v-else-if="req.status === 'quote_sent'"
+                                        payable-type="translation_request"
+                                        :payable-id="req.id"
+                                        :title="req.file_name"
+                                        :amount="Number(req.estimated_price)"
+                                        :trigger-label="t('user.translation.uploadSlip')"
+                                    />
+                                    <Button
+                                        v-else-if="req.status === 'completed'"
+                                        as-child
+                                        size="sm"
+                                        class="border-transparent bg-[#217346] text-white hover:bg-[#1a5c38] hover:text-white"
+                                    >
+                                        <a :href="route('user.translations.download', req.id)"
+                                            ><Download class="w-3 h-3 mr-1" />{{ t('user.translation.downloadResult') }}</a
+                                        >
+                                    </Button>
+                                </div>
+                            </div>
+                            <div
+                                v-if="rejectionReasonFor(req)"
+                                class="mt-2 rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] text-red-700"
+                            >
+                                <span class="font-bold">{{ t('user.translation.previousSlipRejectedPrefix') }}</span>
+                                {{ rejectionReasonFor(req) }}
                             </div>
                         </div>
                     </div>
+
+                    <Pagination
+                        :current-page="requests.current_page"
+                        :last-page="requests.last_page"
+                        :prev-page-url="requests.prev_page_url"
+                        :next-page-url="requests.next_page_url"
+                    />
                 </div>
             </div>
     </div>

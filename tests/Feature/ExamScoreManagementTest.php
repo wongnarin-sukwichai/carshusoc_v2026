@@ -9,6 +9,7 @@ use App\Models\ExamRegistration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class ExamScoreManagementTest extends TestCase
@@ -86,6 +87,27 @@ class ExamScoreManagementTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    public function test_admin_can_export_registrants_with_real_emails_and_blank_score_columns()
+    {
+        $exam = Exam::factory()->create();
+        $admin = Admin::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['email' => 'examinee@example.com']);
+        ExamRegistration::create(['user_id' => $user->id, 'exam_id' => $exam->id, 'status' => 'registered']);
+
+        $response = $this->actingAs($admin, 'admin')->get(route('admin.exams.export-registrants', $exam));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $sheet = IOFactory::load($response->baseResponse->getFile()->getPathname())->getActiveSheet();
+
+        $this->assertSame('email', $sheet->getCell('A1')->getValue());
+        $this->assertSame('grammar', $sheet->getCell('G1')->getValue());
+        $this->assertSame('examinee@example.com', $sheet->getCell('A2')->getValue());
+        $this->assertSame('', (string) $sheet->getCell('B2')->getValue());
+        $this->assertSame('', (string) $sheet->getCell('D2')->getValue());
     }
 
     public function test_validating_a_file_reports_row_errors_without_saving_anything()

@@ -11,7 +11,8 @@ const sidebarNavItems = [
 
 <template>
     <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-6 text-white">
+        <img src="/images/banner.png" alt="" class="w-full h-auto rounded-2xl" />
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900 p-6 text-white">
             <Settings class="absolute right-0 bottom-0 h-48 w-48 translate-x-12 translate-y-6 opacity-10" />
             <div class="relative z-10 max-w-2xl">
                 <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase"> Settings </span>

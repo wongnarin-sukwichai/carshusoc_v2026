@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
 import { confirmDialog } from '@/lib/swal';
+import { type Paginated } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, UserCheck } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -20,7 +22,7 @@ interface AdminRow {
 }
 
 const props = defineProps<{
-    admins: AdminRow[];
+    admins: Paginated<AdminRow>;
 }>();
 
 const editingId = ref<number | null>(null);
@@ -157,7 +159,7 @@ const remove = async (admin: AdminRow) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="member in props.admins" :key="member.id" class="border-t border-slate-200 hover:bg-slate-50">
+                            <tr v-for="member in props.admins.data" :key="member.id" class="border-t border-slate-200 hover:bg-slate-50">
                                 <td class="p-2.5 font-semibold whitespace-nowrap">{{ member.name }}</td>
                                 <td class="p-2.5 font-mono text-slate-500">{{ member.email }}</td>
                                 <td class="p-2.5 whitespace-nowrap">
@@ -186,6 +188,13 @@ const remove = async (admin: AdminRow) => {
                             </tr>
                         </tbody>
                     </table>
+
+                    <Pagination
+                        :current-page="admins.current_page"
+                        :last-page="admins.last_page"
+                        :prev-page-url="admins.prev_page_url"
+                        :next-page-url="admins.next_page_url"
+                    />
                 </div>
             </div>
         </div>

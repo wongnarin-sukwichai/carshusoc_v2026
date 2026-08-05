@@ -30,7 +30,10 @@ const handleSidebarChange = (open: boolean) => {
     <div v-if="variant === 'header'" class="flex min-h-screen w-full flex-col">
         <slot />
     </div>
-    <div v-else-if="variant === 'static-sidebar'" class="flex min-h-screen w-full flex-col bg-slate-50 dark:bg-background">
+    <div
+        v-else-if="variant === 'static-sidebar'"
+        class="flex min-h-screen w-full flex-col bg-slate-50 bg-[url('/images/bg.png')] bg-cover bg-center bg-no-repeat bg-fixed dark:bg-background"
+    >
         <BrandHeader :home-href="homeHref">
             <slot name="header-end" />
             <LocaleSwitcher />

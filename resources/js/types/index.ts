@@ -18,6 +18,14 @@ export interface NavItem {
 
 export type FlashPayload = string | { key: string; params?: Record<string, unknown> };
 
+export interface Paginated<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+}
+
 export interface EmailLogEntry {
     id: number | string;
     subject: string;

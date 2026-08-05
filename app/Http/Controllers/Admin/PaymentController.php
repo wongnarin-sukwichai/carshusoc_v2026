@@ -10,34 +10,93 @@ use App\Models\TranslationRequest;
 use App\Services\EmailNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PaymentController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $payments = Payment::with(['user', 'payable'])
-            ->orderByRaw("status = 'pending' desc")
-            ->latest()
+        $status = $request->query('status', 'all');
+
+        // Grouped by payable (not one row per Payment) so repeat slip attempts
+        // for the same enrollment/registration/request — e.g. a rejected slip
+        // followed by a corrected resubmission — read as one case instead of
+        // scattered, unrelated-looking rows. Ordered by id (always
+        // monotonically increasing), not created_at — attempts made in quick
+        // succession can share the same created_at second, which would make
+        // "latest" ambiguous.
+        $cases = Payment::with(['user', 'payable'])
+            ->orderBy('id')
             ->get()
-            ->map(fn (Payment $payment) => [
-                'id' => $payment->id,
-                'user_name' => $payment->user->name,
-                'user_email' => $payment->user->email,
-                'label' => $this->labelFor($payment),
-                'amount' => (float) $payment->amount,
-                'has_slip' => (bool) $payment->slip_path,
-                'status' => $payment->status,
-                'wants_receipt' => $payment->wants_receipt,
-                'wants_mail_delivery' => $payment->payable instanceof ExamRegistration ? $payment->payable->wants_mail_delivery : false,
-                'mail_delivery_fee_charged' => $payment->payable instanceof ExamRegistration ? $payment->payable->mail_delivery_fee_charged : null,
-                'created_at' => $payment->created_at->toDateTimeString(),
-            ]);
+            ->groupBy(fn (Payment $payment) => $payment->payable_type.':'.$payment->payable_id)
+            ->map(function ($payments) {
+                $payments = $payments->values();
+                $latest = $payments->last();
+
+                return [
+                    'case_key' => $latest->payable_type.':'.$latest->payable_id,
+                    'user_name' => $latest->user->name,
+                    'user_email' => $latest->user->email,
+                    'label' => $this->labelFor($latest),
+                    'latest_status' => $latest->status,
+                    'latest_id' => $latest->id,
+                    'payments' => $payments->map(fn (Payment $payment) => [
+                        'id' => $payment->id,
+                        'amount' => (float) $payment->amount,
+                        'has_slip' => (bool) $payment->slip_path,
+                        'status' => $payment->status,
+                        'wants_receipt' => $payment->wants_receipt,
+                        'wants_mail_delivery' => $payment->payable instanceof ExamRegistration ? $payment->payable->wants_mail_delivery : false,
+                        'mail_delivery_fee_charged' => $payment->payable instanceof ExamRegistration ? $payment->payable->mail_delivery_fee_charged : null,
+                        'rejected_reason' => $payment->rejected_reason,
+                        'created_at' => $payment->created_at->toDateTimeString(),
+                    ])->values(),
+                ];
+            })
+            ->values()
+            // Pending cases first; within each bucket, most recently active case first.
+            ->sortByDesc(fn (array $case) => ($case['latest_status'] === 'pending' ? 1 : 0) * 1000000000 + $case['latest_id'])
+            ->values();
+
+        // Tab counts computed from the full, unfiltered set of cases — so the
+        // badges always reflect true totals rather than just what happens to
+        // land on the current page.
+        $statusCounts = [
+            'all' => $cases->count(),
+            'pending' => $cases->where('latest_status', 'pending')->count(),
+            'approved' => $cases->where('latest_status', 'approved')->count(),
+            'rejected' => $cases->where('latest_status', 'rejected')->count(),
+        ];
+
+        if ($status !== 'all') {
+            $cases = $cases->where('latest_status', $status)->values();
+        }
+
+        // Grouping into cases happens in PHP (not SQL), so pagination can't
+        // be a plain ->paginate() on the query — it has to slice the already
+        // -grouped collection by hand instead.
+        $perPage = 5;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $pageItems = $cases->forPage($currentPage, $perPage)
+            ->values()
+            ->map(fn (array $case) => collect($case)->except('latest_id')->all());
+
+        $paginated = new LengthAwarePaginator(
+            $pageItems,
+            $cases->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url()]
+        );
+        $paginated->withQueryString();
 
         return Inertia::render('admin/Payments', [
-            'payments' => $payments,
+            'paymentCases' => $paginated,
+            'statusCounts' => $statusCounts,
+            'activeStatus' => $status,
         ]);
     }
 

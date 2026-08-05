@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import Pagination from '@/components/Pagination.vue';
 import { Badge, type BadgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
+import { type Paginated } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { CheckCircle2, Clock, ListChecks, NotebookPen, Receipt, type LucideIcon } from 'lucide-vue-next';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({ layout: AdminLayout });
@@ -24,11 +26,19 @@ interface TranslationRequestRow {
     payment_status: 'pending' | 'approved' | 'rejected' | null;
 }
 
+type StatusTab = 'all' | TranslationRequestRow['status'];
+
 const props = defineProps<{
-    requests: TranslationRequestRow[];
+    requests: Paginated<TranslationRequestRow>;
+    statusCounts: Record<StatusTab, number>;
+    activeStatus: StatusTab;
 }>();
 
 const { t } = useI18n();
+
+const goToTab = (tab: StatusTab | number | undefined) => {
+    router.get(route('admin.translation-quotes'), { status: tab }, { preserveScroll: true });
+};
 
 const quoteDrafts = reactive<Record<number, { estimated_price: number; delivery_days: number }>>({});
 const deliverFiles = reactive<Record<number, File | null>>({});
@@ -85,10 +95,6 @@ const statusVariant: Record<TranslationRequestRow['status'], NonNullable<BadgeVa
     completed: 'success',
 };
 
-type StatusTab = 'all' | TranslationRequestRow['status'];
-
-const activeTab = ref<StatusTab>('all');
-
 const tabIcon: Record<StatusTab, LucideIcon> = {
     all: ListChecks,
     submitted: Clock,
@@ -115,16 +121,12 @@ const cardBorderClass: Record<TranslationRequestRow['status'], string> = {
 };
 
 const tabs = computed<{ value: StatusTab; label: string; count: number }[]>(() => [
-    { value: 'all', label: t('admin.translationQuotes.tabAll'), count: props.requests.length },
-    { value: 'submitted', label: statusLabel.value.submitted, count: props.requests.filter((r) => r.status === 'submitted').length },
-    { value: 'quote_sent', label: statusLabel.value.quote_sent, count: props.requests.filter((r) => r.status === 'quote_sent').length },
-    { value: 'translating', label: statusLabel.value.translating, count: props.requests.filter((r) => r.status === 'translating').length },
-    { value: 'completed', label: statusLabel.value.completed, count: props.requests.filter((r) => r.status === 'completed').length },
+    { value: 'all', label: t('admin.translationQuotes.tabAll'), count: props.statusCounts.all },
+    { value: 'submitted', label: statusLabel.value.submitted, count: props.statusCounts.submitted },
+    { value: 'quote_sent', label: statusLabel.value.quote_sent, count: props.statusCounts.quote_sent },
+    { value: 'translating', label: statusLabel.value.translating, count: props.statusCounts.translating },
+    { value: 'completed', label: statusLabel.value.completed, count: props.statusCounts.completed },
 ]);
-
-const filteredRequests = computed(() =>
-    activeTab.value === 'all' ? props.requests : props.requests.filter((r) => r.status === activeTab.value),
-);
 </script>
 
 <template>
@@ -141,12 +143,12 @@ const filteredRequests = computed(() =>
         </div>
 
         <div class="mt-4">
-            <p v-if="requests.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
+            <p v-if="statusCounts.all === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                 {{ t('admin.translationQuotes.empty') }}
             </p>
 
             <template v-else>
-                <Tabs v-model="activeTab" class="w-full">
+                <Tabs :model-value="activeStatus" class="w-full" @update:model-value="goToTab">
                     <TabsList>
                         <TabsTrigger
                             v-for="tab in tabs"
@@ -162,14 +164,14 @@ const filteredRequests = computed(() =>
                 </Tabs>
 
                 <Transition name="fade" mode="out-in">
-                    <div :key="activeTab" class="mt-4 space-y-3">
-                        <p v-if="filteredRequests.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
+                    <div :key="activeStatus" class="mt-4 space-y-3">
+                        <p v-if="requests.data.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                             {{ t('admin.translationQuotes.emptyFiltered') }}
                         </p>
 
                         <template v-else>
                             <div
-                                v-for="request in filteredRequests"
+                                v-for="request in requests.data"
                                 :key="request.id"
                                 :class="['rounded-xl border p-4 shadow-sm', cardBorderClass[request.status]]"
                             >
@@ -240,6 +242,13 @@ const filteredRequests = computed(() =>
                                 </div>
                             </div>
                         </template>
+
+                        <Pagination
+                            :current-page="requests.current_page"
+                            :last-page="requests.last_page"
+                            :prev-page-url="requests.prev_page_url"
+                            :next-page-url="requests.next_page_url"
+                        />
                     </div>
                 </Transition>
             </template>

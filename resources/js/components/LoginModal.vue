@@ -57,7 +57,7 @@ const submit = () => {
     <Dialog v-model:open="open">
         <DialogTrigger as-child>
             <slot>
-                <button type="button" class="rounded-lg px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
+                <button type="button" class="rounded-lg px-4 py-1.5 text-xs font-bold text-slate-800 hover:text-violet-700">
                     {{ t('welcome.login') }}
                 </button>
             </slot>

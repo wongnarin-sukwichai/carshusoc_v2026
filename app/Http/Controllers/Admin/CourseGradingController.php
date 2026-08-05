@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CourseGradingController extends Controller
 {
@@ -84,6 +87,45 @@ class CourseGradingController extends Controller
         }
 
         return back()->with('status', ['key' => 'flash.courseGrading.saved']);
+    }
+
+    public function exportRoster(Course $course): BinaryFileResponse
+    {
+        $statusLabels = [
+            'pending_payment' => 'รอชำระเงิน',
+            'studying' => 'กำลังเรียน',
+            'passed' => 'ผ่าน',
+            'failed' => 'ไม่ผ่าน',
+        ];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->fromArray(['name', 'email', 'status'], null, 'A1');
+
+        $rows = CourseEnrollment::with('user')
+            ->where('course_id', $course->id)
+            ->latest()
+            ->get()
+            ->map(fn (CourseEnrollment $enrollment) => [
+                $enrollment->user->name,
+                $enrollment->user->email,
+                $statusLabels[$enrollment->status] ?? $enrollment->status,
+            ])
+            ->all();
+
+        if ($rows !== []) {
+            $sheet->fromArray($rows, null, 'A2');
+        }
+
+        foreach (range('A', 'C') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'course-roster').'.xlsx';
+        (new Xlsx($spreadsheet))->save($tempPath);
+
+        return response()->download($tempPath, "course-roster-{$course->code}.xlsx")->deleteFileAfterSend(true);
     }
 
     private function revokeCertificateIfAny(CourseEnrollment $enrollment): void

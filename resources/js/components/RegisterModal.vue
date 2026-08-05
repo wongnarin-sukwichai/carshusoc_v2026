@@ -45,7 +45,7 @@ const submit = () => {
     <Dialog v-model:open="open">
         <DialogTrigger v-if="showTrigger" as-child>
             <slot>
-                <button type="button" class="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-bold hover:bg-blue-700">
+                <button type="button" class="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-bold hover:bg-violet-700 text-white">
                     {{ t('welcome.register') }}
                 </button>
             </slot>
@@ -88,7 +88,7 @@ const submit = () => {
                     </div>
 
                     <Button type="submit" class="w-full" :disabled="form.processing">
-                        <LoaderCircle v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
+                        <LoaderCircle v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         {{ form.processing ? t('auth.register.submitting') : t('auth.register.submit') }}
                     </Button>
                 </form>
@@ -97,7 +97,7 @@ const submit = () => {
             <template v-else>
                 <DialogHeader>
                     <DialogTitle class="flex items-center gap-2">
-                        <MailCheck class="h-5 w-5 text-emerald-600" />
+                        <MailCheck class="w-5 h-5 text-emerald-600" />
                         {{ t('auth.register.checkEmailTitle') }}
                     </DialogTitle>
                 </DialogHeader>

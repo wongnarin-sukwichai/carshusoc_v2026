@@ -2,8 +2,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminLayout from '@/layouts/admin/AdminLayout.vue';
+import { confirmDialog } from '@/lib/swal';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ClipboardCheck, Download, Search } from 'lucide-vue-next';
+import { ClipboardCheck, Download, FileSpreadsheet, Search } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -118,6 +119,21 @@ const onFileChange = (event: Event) => {
 const downloadTemplate = () => {
     if (!props.selectedExamId) return;
     window.location.href = route('admin.exams.score-template', props.selectedExamId);
+};
+
+const exportRegistrants = async () => {
+    if (!props.selectedExamId) return;
+
+    const confirmed = await confirmDialog({
+        title: t('common.areYouSure'),
+        text: t('admin.examScores.exportConfirmText'),
+        icon: 'question',
+        confirmButtonText: t('admin.examScores.export'),
+    });
+
+    if (!confirmed) return;
+
+    window.location.href = route('admin.exams.export-registrants', props.selectedExamId);
 };
 
 const pendingAction = ref<'validate' | 'save' | null>(null);
@@ -258,9 +274,23 @@ const invalidPreviewRows = computed(() => props.importPreview?.rows.filter((row)
             </div>
         </div>
 
-        <div class="relative">
-            <Search class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            <Input v-model="search" type="text" :placeholder="t('admin.examScores.searchPlaceholder')" class="max-w-xs pl-8 text-xs" />
+        <div class="flex items-center justify-between gap-2">
+            <div class="relative">
+                <Search class="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                <Input v-model="search" type="text" :placeholder="t('admin.examScores.searchPlaceholder')" class="max-w-xs pl-8 text-xs" />
+            </div>
+
+            <Button
+                v-if="selectedExamId"
+                type="button"
+                size="sm"
+                variant="outline"
+                class="border-[#217346] text-[#217346] hover:bg-[#217346]/10 hover:text-[#217346]"
+                @click="exportRegistrants"
+            >
+                <FileSpreadsheet class="w-4 h-4" />
+                {{ t('admin.examScores.export') }}
+            </Button>
         </div>
 
         <Transition name="fade" mode="out-in">

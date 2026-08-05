@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\CourseEnrollment;
 use App\Models\ExamRegistration;
+use App\Models\Payment;
 use App\Models\TranslationRequest;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
             'course_enrollment' => CourseEnrollment::class,
             'exam_registration' => ExamRegistration::class,
             'translation_request' => TranslationRequest::class,
+            'payment' => Payment::class,
         ]);
 
         // Backend doesn't track the user's locale (see CLAUDE.md), so the

@@ -14,10 +14,20 @@ use Inertia\Response;
 
 class RegistrantController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->query('search');
+
+        $users = User::orderBy('name')
+            ->when($search, fn ($query) => $query->where(fn ($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")))
+            ->paginate(10, ['id', 'name', 'email', 'phone', 'identity_type', 'identity_number'])
+            ->withQueryString();
+
         return Inertia::render('admin/Registrants', [
-            'users' => User::orderBy('name')->get(['id', 'name', 'email', 'phone', 'identity_type', 'identity_number']),
+            'users' => $users,
+            'search' => $search,
         ]);
     }
 

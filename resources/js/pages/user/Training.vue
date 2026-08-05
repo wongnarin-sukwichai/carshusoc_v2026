@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/date';
 import { confirmDialog } from '@/lib/swal';
 import { Head, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
-import { BookOpen, BookOpenCheck, CalendarClock, CalendarRange, CheckCircle2, Lock, MapPin } from 'lucide-vue-next';
+import { BookOpen, BookOpenCheck, CalendarClock, CalendarRange, CheckCircle2, Clock, Lock, MapPin } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -40,7 +40,12 @@ interface Enrollment {
 const props = defineProps<{
     courses: Course[];
     enrollments: Record<number, Enrollment>;
+    pendingPaymentIds: number[];
+    rejectionReasons: Record<number, string>;
 }>();
+
+const hasPendingPayment = (enrollment: Enrollment | undefined) => !!enrollment && props.pendingPaymentIds.includes(enrollment.id);
+const rejectionReasonFor = (enrollment: Enrollment | undefined) => (enrollment ? props.rejectionReasons[enrollment.id] : undefined);
 
 const { t, locale } = useI18n();
 
@@ -96,7 +101,8 @@ const showGuidelines = ref(false);
 <template>
     <div class="flex flex-col flex-1 h-full gap-4 p-4 rounded-xl">
         <Head :title="t('nav.user.training')" />
-            <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-br from-indigo-900 to-slate-900">
+            <img src="/images/banner.png" alt="" class="w-full h-auto rounded-2xl" />
+            <div class="relative p-6 overflow-hidden text-white rounded-2xl bg-gradient-to-r from-blue-800 to-indigo-900">
                 <BookOpen class="absolute bottom-0 right-0 w-48 h-48 translate-x-12 translate-y-6 opacity-10" />
                 <div class="relative z-10 max-w-2xl">
                     <span class="rounded bg-indigo-500 px-2 py-0.5 text-[9px] font-black tracking-widest text-white uppercase">
@@ -114,7 +120,7 @@ const showGuidelines = ref(false);
                     </button>
                 </div>
             </div>
-
+            
             <p v-if="courses.length === 0" class="p-8 text-sm text-center border border-dashed rounded-xl text-muted-foreground">
                 {{ t('user.training.empty') }}
             </p>
@@ -123,7 +129,7 @@ const showGuidelines = ref(false);
                 <div
                     v-for="course in courses"
                     :key="course.id"
-                    class="flex flex-col justify-between p-4 border border-blue-500 shadow-sm rounded-xl"
+                    class="flex flex-col justify-between p-4 bg-white border border-blue-100 shadow-xl rounded-xl"
                 >
                     <div class="flex flex-col flex-1">
                         <div class="flex items-center justify-between mb-2 text-xs">
@@ -189,6 +195,13 @@ const showGuidelines = ref(false);
                                     class="text-white bg-indigo-600 border-indigo-600"
                                     >{{ t('user.training.statusStudying') }}</Badge
                                 >
+                                <span
+                                    v-else-if="enrollments[course.id]?.status === 'pending_payment' && hasPendingPayment(enrollments[course.id])"
+                                    class="flex items-center gap-1 text-sm font-bold text-amber-600"
+                                >
+                                    <Clock class="w-4 h-4" />
+                                    {{ t('user.training.statusAwaitingReview') }}
+                                </span>
                                 <PaymentSlipDialog
                                     v-else-if="enrollments[course.id]?.status === 'pending_payment'"
                                     payable-type="course_enrollment"
@@ -213,6 +226,13 @@ const showGuidelines = ref(false);
                         >
                             * {{ eligibility(course).reason }}
                         </p>
+                        <div
+                            v-if="rejectionReasonFor(enrollments[course.id])"
+                            class="mt-2 rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] text-red-700"
+                        >
+                            <span class="font-bold">{{ t('user.training.previousSlipRejectedPrefix') }}</span>
+                            {{ rejectionReasonFor(enrollments[course.id]) }}
+                        </div>
                     </div>
                 </div>
             </div>
