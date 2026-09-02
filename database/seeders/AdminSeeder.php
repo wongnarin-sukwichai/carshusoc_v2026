@@ -11,10 +11,10 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         Admin::firstOrCreate(
-            ['email' => 'wongnarin.s@msu.ac.th'],
+            ['email' => 'admin@gmail.com'],
             [
-                'name' => 'วงศ์นรินทร์ สุขวิชัย',
-                'password' => Hash::make('w123'),
+                'name' => 'เจ้าหน้าที่ดูแลระบบ',
+                'password' => Hash::make('1234'),
                 'role' => 'admin',
                 'is_active' => true,
             ]
